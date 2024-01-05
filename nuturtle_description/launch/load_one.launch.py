@@ -2,13 +2,17 @@
 
 Starts all the nodes to visualize a robot in rviz.
 
-Citation - https://github.com/m-elwin/nubot/blob/main/launch/nubot_rviz.launch.py.
+Citation-https://github.com/m-elwin/nubot/blob/main/launch/nubot_rviz.launch.py.
 
 """
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument, Shutdown
+from launch.actions import (
+    DeclareLaunchArgument,
+    Shutdown,
+    SetLaunchConfiguration,
+)
 from launch.substitutions import (
     Command,
     PathJoinSubstitution,
@@ -35,9 +39,19 @@ def generate_launch_description():
                 description="true (default): use rviz,\
                 false: no rviz used",
             ),
+            DeclareLaunchArgument(
+                name="color",
+                default_value="purple",
+                choices=["purple", "red", "green", "blue", ""],
+                description="purple(default):change turtlebot color to purple,\
+                red:change turtlebot color to red,\
+                green:change turtlebot color to green,\
+                blue:change turtlebot color to blue",
+            ),
             Node(
                 package="joint_state_publisher",
                 executable="joint_state_publisher",
+                namespace=PathJoinSubstitution([LaunchConfiguration("color")]),
                 condition=IfCondition(
                     EqualsSubstitution(LaunchConfiguration("use_jsp"), "true")
                 ),
@@ -45,6 +59,7 @@ def generate_launch_description():
             Node(
                 package="rviz2",
                 executable="rviz2",
+                namespace=PathJoinSubstitution([LaunchConfiguration("color")]),
                 condition=IfCondition(
                     EqualsSubstitution(LaunchConfiguration("use_rviz"), "true")
                 ),
@@ -60,6 +75,7 @@ def generate_launch_description():
             Node(
                 package="robot_state_publisher",
                 executable="robot_state_publisher",
+                namespace=PathJoinSubstitution([LaunchConfiguration("color")]),
                 parameters=[
                     {
                         "robot_description": Command(
@@ -67,15 +83,20 @@ def generate_launch_description():
                                 TextSubstitution(text="xacro "),
                                 PathJoinSubstitution(
                                     [
-                                        FindPackageShare("nuturtle_description"),
-                                        "urdf", "turtlebot3_burger.urdf.xacro",
+                                      FindPackageShare("nuturtle_description"),
+                                      "urdf", "turtlebot3_burger.urdf.xacro",
                                     ]
                                 ),
+                                TextSubstitution(text=" color:="),
+                                LaunchConfiguration("color"),
                             ]
                         )
-                    }
+                    },
+                    {
+                        "tf_prefix": Command([PathJoinSubstitution(
+                            [LaunchConfiguration("color")])])
+                    },
                 ],
             ),
-            
         ]
     )
