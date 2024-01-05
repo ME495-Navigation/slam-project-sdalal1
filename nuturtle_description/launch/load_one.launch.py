@@ -42,11 +42,14 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 name="color",
                 default_value="purple",
-                choices=["purple", "red", "green", "blue", ""],
+                choices=["purple", "red", "green", "blue"],
                 description="purple(default):change turtlebot color to purple,\
                 red:change turtlebot color to red,\
                 green:change turtlebot color to green,\
                 blue:change turtlebot color to blue",
+            ),
+            SetLaunchConfiguration(
+                name="filename", value=["basic_", LaunchConfiguration("color"), ".rviz"]
             ),
             Node(
                 package="joint_state_publisher",
@@ -66,8 +69,18 @@ def generate_launch_description():
                 arguments=[
                     "-d",
                     PathJoinSubstitution(
-                        [FindPackageShare("nuturtle_description"), "config",
-                         "basic_purple.rviz"]
+                        [
+                            FindPackageShare("nuturtle_description"),
+                            "config",
+                            LaunchConfiguration("filename"),
+                        ]
+                    ),
+                    "-f",
+                    PathJoinSubstitution(
+                        [
+                            LaunchConfiguration("color"),
+                            TextSubstitution(text="base_link"),
+                        ]
                     ),
                 ],
                 on_exit=Shutdown(),
@@ -83,18 +96,19 @@ def generate_launch_description():
                                 TextSubstitution(text="xacro "),
                                 PathJoinSubstitution(
                                     [
-                                      FindPackageShare("nuturtle_description"),
-                                      "urdf", "turtlebot3_burger.urdf.xacro",
+                                        FindPackageShare("nuturtle_description"),
+                                        "urdf",
+                                        "turtlebot3_burger.urdf.xacro",
                                     ]
                                 ),
                                 TextSubstitution(text=" color:="),
                                 LaunchConfiguration("color"),
                             ]
-                        )
-                    },
-                    {
-                        "tf_prefix": Command([PathJoinSubstitution(
-                            [LaunchConfiguration("color")])])
+                        ),
+                        "frame_prefix": PathJoinSubstitution(
+                            [LaunchConfiguration("color"),
+                             TextSubstitution(text="")]
+                        ),
                     },
                 ],
             ),
