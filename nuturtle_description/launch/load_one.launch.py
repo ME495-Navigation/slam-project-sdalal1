@@ -49,7 +49,8 @@ def generate_launch_description():
                 blue:change turtlebot color to blue",
             ),
             SetLaunchConfiguration(
-                name="filename", value=["basic_", LaunchConfiguration("color"), ".rviz"]
+                name="filename", value=["basic_", LaunchConfiguration("color"),
+                                        ".rviz"]
             ),
             Node(
                 package="joint_state_publisher",
@@ -96,9 +97,9 @@ def generate_launch_description():
                                 TextSubstitution(text="xacro "),
                                 PathJoinSubstitution(
                                     [
-                                        FindPackageShare("nuturtle_description"),
-                                        "urdf",
-                                        "turtlebot3_burger.urdf.xacro",
+                                      FindPackageShare("nuturtle_description"),
+                                      "urdf",
+                                      "turtlebot3_burger.urdf.xacro",
                                     ]
                                 ),
                                 TextSubstitution(text=" color:="),
