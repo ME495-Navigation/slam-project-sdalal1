@@ -53,7 +53,7 @@ REQUIRE(pt.y == b.y + a.y);
 
 }
 
-TEST_CASE("testing << operator for a pt, point brackets", "<<"){
+TEST_CASE("testing >> operator for a pt, point brackets", ">>"){
     Point2D pt;
     std::istringstream is("[4.5 7.2]");
     is >> pt;
@@ -61,7 +61,7 @@ TEST_CASE("testing << operator for a pt, point brackets", "<<"){
     REQUIRE(pt.y == 7.2);
 }
 
-TEST_CASE("testing << operator for a pt, point no brackets", "<<"){
+TEST_CASE("testing >> operator for a pt, point no brackets", ">>"){
     Point2D pt;
     std::istringstream is("4.8 7.7");
     is >> pt;
@@ -69,14 +69,14 @@ TEST_CASE("testing << operator for a pt, point no brackets", "<<"){
     REQUIRE(pt.y == 7.7);
 }
 
-TEST_CASE("testing >> operator for a point", ">>"){
-    Point2D pt{2.0,3.2};
+TEST_CASE("testing << operator for a point", "<<"){
+    Point2D pt{2.2,3.2};
     std::stringstream os;
     os<<pt;
-    REQUIRE(os.str()=="[2.0 3.2]");
+    REQUIRE(os.str()=="[2.2 3.2]");
 }
 
-TEST_CASE("testing << operator for a vec, vector brackets", "<<"){
+TEST_CASE("testing >> operator for a vec, vector brackets", ">>"){
     Vector2D vec;
     std::istringstream is("[4.5 7.2]");
     is >> vec;
@@ -84,7 +84,7 @@ TEST_CASE("testing << operator for a vec, vector brackets", "<<"){
     REQUIRE(vec.y == 7.2);
 }
 
-TEST_CASE("testing << operator for a vec, vector no brackets", "<<"){
+TEST_CASE("testing >> operator for a vec, vector no brackets", ">>"){
     Vector2D vec;
     std::istringstream is("4.8 7.7");
     is >> vec;
@@ -92,10 +92,10 @@ TEST_CASE("testing << operator for a vec, vector no brackets", "<<"){
     REQUIRE(vec.y == 7.7);
 }
 
-TEST_CASE("testing >> operator for a vector", ">>"){
-    Vector2D vec{2.0,3.2};
+TEST_CASE("testing << operator for a vector", "<<"){
+    Vector2D vec{2.2,3.2};
     std::stringstream os;
     os<<vec;
-    REQUIRE(os.str()=="[2.0 3.2]");
+    REQUIRE(os.str()=="[2.2 3.2]");
 }
 }
