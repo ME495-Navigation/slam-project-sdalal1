@@ -79,26 +79,24 @@ namespace turtlelib{
     }
 
     std::ostream & operator<<(std::ostream & os, const Transform2D & tf){
-        return os<<"deg:"<<turtlelib::rad2deg(tf.ang)<<" x:"<<tf.t.x<<" y:"<<tf.t.y;
+        return os<<"deg:"<<" "<<rad2deg(tf.ang)<<" "<<"x:"<<" "<<tf.t.x<<" "<<"y:"<<" "<<tf.t.y;
     }
 
     std::istream & operator>>(std::istream & is, Transform2D & tf){
         char c1 = is.get();
-        char c2[5];
-        char c3[5] = {"deg:"};
-        char c4[3] = {"x:"};
-        char c5[3] = {"y:"};
-        double deg;
-        Vector2D v;
+        std::string c3 ,c4, c5;
+        double deg ;
+        Vector2D v ;
 
         if (c1 == 'd'){
-            is>>c3>>c2>>deg>>c4>>c2>>v.x>>c5>>c2>>v.y; ///NOTE: Not right. Need to work on
+
+            is>>c3>>deg>>c4>>v.x>>c5>>v.y; ///NOTE: Not right. Need to work on this.
         }
         else{
             is.putback(c1);
             is >>deg>>v.x>>v.y;
         }
-        Transform2D new_o{v,deg};
+        Transform2D new_o{v,deg2rad(deg)};
         tf = new_o;
         return is;
     }

@@ -102,11 +102,16 @@ if(BUILD_TESTING)
     # A test is just an executable that is linked against the unit testing library
     add_executable(test_geometry2 tests/test_geometry2.cpp)
     add_executable(test_se2d tests/test_se2d.cpp)
+    add_executable(test_svg tests/test_svg.cpp)
     target_link_libraries(test_geometry2 Catch2::Catch2WithMain turtlelib)
     target_link_libraries(test_se2d Catch2::Catch2WithMain turtlelib)
+    target_link_libraries(test_svg Catch2::Catch2WithMain turtlelib)
+
 
     # register the test with CTest, telling it what executable to run
     add_test(NAME test_geometry2 COMMAND test_geometry2)
     add_test(NAME test_se2d COMMAND test_se2d)
+    add_test(NAME test_svg COMMAND test_svg)
+
 
 endif()

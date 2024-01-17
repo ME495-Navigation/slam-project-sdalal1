@@ -65,7 +65,7 @@ namespace turtlelib{
 
     TEST_CASE("testing () operator for point", "[pt()]"){
         Point2D pt{1.0, 0.0};
-        Transform2D trans{Vector2D{2.2,3.3}, 180/2};
+        Transform2D trans{Vector2D{2.2,3.3}, PI/2};
         pt = trans.operator()(pt);
 
         REQUIRE_THAT(pt.x, 
@@ -76,7 +76,7 @@ namespace turtlelib{
 
     TEST_CASE("testing () operator for vector", "[vec()]"){
         Vector2D vec{1.4, 1.1};
-        Transform2D trans{Vector2D{2.2,3.3}, 180/2};
+        Transform2D trans{Vector2D{2.2,3.3}, PI/2};
         vec = trans.operator()(vec);
 
         REQUIRE_THAT(vec.x, 
@@ -86,11 +86,11 @@ namespace turtlelib{
     }
 
     TEST_CASE("testing () operator for twist", "[twist()]"){
-        Twist2D twi{180/2, 1.4, 1.1};
-        Transform2D trans{Vector2D{2.2,3.3}, 180/2};
+        Twist2D twi{PI/2, 1.4, 1.1};
+        Transform2D trans{Vector2D{2.2,3.3}, PI/2};
         twi = trans.operator()(twi);
         REQUIRE_THAT(twi.omega,
-        Catch::Matchers::WithinAbs(180/2, 0.1));
+        Catch::Matchers::WithinAbs(PI/2, 0.1));
         REQUIRE_THAT(twi.x, 
         Catch::Matchers::WithinAbs(2.2, 0.1));
         REQUIRE_THAT(twi.y, 
@@ -98,10 +98,10 @@ namespace turtlelib{
     }
 
     TEST_CASE("tesing the inv operator","[inverse]"){
-        Transform2D trans{Vector2D{2.2,3.3}, 180/2};
+        Transform2D trans{Vector2D{2.2,3.3}, PI/2};
         Transform2D inv = trans.inv();
         REQUIRE_THAT(inv.rotation(),
-        Catch::Matchers::WithinAbs(-180/2, 0.1));
+        Catch::Matchers::WithinAbs(-PI/2, 0.1));
         REQUIRE_THAT(inv.translation().x,
         Catch::Matchers::WithinAbs(-3.3, 0.1));
         REQUIRE_THAT(inv.translation().y,
@@ -137,36 +137,36 @@ namespace turtlelib{
     }
 
     TEST_CASE("testing << with trabsform2d","[Transform2D<<]"){
-        Transform2D trans{Vector2D{2.4,4.4}, 145.25};
+        Transform2D trans{Vector2D{2.4,4.4}, 2.5};
         std::stringstream os;
         os<<trans;
-        REQUIRE(os.str()=="deg:145.25 x:2.4 y:4.4");
+        REQUIRE(os.str()=="deg: 143.239 x: 2.4 y: 4.4");
     }
 
     TEST_CASE("testing >> operator for a transform2D, transform2d no brackets", "[intrans>>]"){
     Transform2D trans;
     std::istringstream is("1.4 3.5 3.5");
     is >> trans;
-    REQUIRE(trans.rotation() == 1.4);
+    REQUIRE_THAT(trans.rotation(), Catch::Matchers::WithinAbs(turtlelib::deg2rad(1.4),0.1));
     REQUIRE(trans.translation().x == 3.5);
     REQUIRE(trans.translation().y == 3.5);
     }
 
-    // TEST_CASE("testing >> operator for a transform2D, transform2d terms", "[intrans_brack>>]"){
-    // Transform2D trans;
-    // std::istringstream is("deg:1.4 x:3.5 y:3.5");
-    // is >> trans;
-    // REQUIRE(trans.rotation() == 1.4);
-    // REQUIRE(trans.translation().x == 3.5);
-    // REQUIRE(trans.translation().y == 3.5);
-    // }
+    TEST_CASE("testing >> operator for a transform2D, transform2d terms", "[intrans_brack>>]"){
+    Transform2D trans;
+    std::istringstream is("deg: 90 x: 3.5 y: 3.5");
+    is >> trans;
+    REQUIRE_THAT(trans.rotation(), Catch::Matchers::WithinAbs(turtlelib::deg2rad(90),0.1));
+    REQUIRE(trans.translation().x == 3.5);
+    REQUIRE(trans.translation().y == 3.5);
+    }
 
     TEST_CASE("testing * operator for two transform2D objects", "[multiplication*]"){
-    Transform2D lhs{Vector2D{3.0,5.2}, 180/2};
-    Transform2D rhs{Vector2D{3.7,6.3}, 180/4};
+    Transform2D lhs{Vector2D{3.0,5.2}, PI/2};
+    Transform2D rhs{Vector2D{3.7,6.3}, PI/4};
     lhs = operator*(lhs,rhs);
 
-    REQUIRE(lhs.rotation() == 3*(180/4));
+    REQUIRE(lhs.rotation() == 3*(PI/4));
     REQUIRE_THAT(lhs.translation().x,
         Catch::Matchers::WithinAbs(-3.3,0.1));
     REQUIRE_THAT(lhs.translation().y,
