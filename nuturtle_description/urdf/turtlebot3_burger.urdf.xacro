@@ -1,5 +1,11 @@
 <?xml version="1.0" ?>
 <robot name="turtlebot3_burger" xmlns:xacro="http://ros.org/wiki/xacro">
+<!-- File Changes -->
+<!-- 1. Added a yaml file for the properties and removed includes for common_proprties.xacro and common_properties.xacro -->
+<!-- 2. Added xacro propertis to catch params from the diff_params.yaml -->
+<!-- 3. Added color as an argument to be called to have multiple color possibilities -->
+<!-- 4. Changed loaction of the mesh files to point at the shared directory -->
+<!-- 5. A conditional and set collision geometry wrt to the sign of the collision_radius -->
 
   <xacro:property name="bot_params" value="$(find nuturtle_description)/config/diff_params.yaml" />
   <xacro:property name="params" value="${xacro.load_yaml(bot_params)['/**']['ros__parameters']}" />

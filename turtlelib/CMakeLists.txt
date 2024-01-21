@@ -62,6 +62,7 @@ install(DIRECTORY include/turtlelib DESTINATION include)
 # to find this project. It must be installed separately.
 install(TARGETS frame turtlelib EXPORT turtlelib-targets)
 
+install(FILES exercises/B6_frame_input.txt DESTINATION build/)
 # The project_name-targets created by install(TARGETS) needs to be installed.
 # install(EXPORT ...) will generate a file called project_name-config.cmake
 # that contains the exported targets.

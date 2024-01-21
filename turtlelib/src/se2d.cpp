@@ -12,7 +12,7 @@ namespace turtlelib{
         }
         else{
             is.putback(c1);
-            is >>tw.omega >> tw.x >> tw.y >> c1;
+            is >>tw.omega >> tw.x >> tw.y;
         }
         return is;
     }
@@ -51,8 +51,8 @@ namespace turtlelib{
     Twist2D Transform2D::operator()(Twist2D v) const{
         Twist2D tw;
         tw.omega = v.omega;
-        tw.x = (v.x*cos(ang))-(v.y*sin(ang))+t.y;
-        tw.y = (v.x*sin(ang))+(v.y*cos(ang))-t.x;
+        tw.x = (v.x*cos(ang))-(v.y*sin(ang))+(v.omega*t.y);
+        tw.y = (v.x*sin(ang))+(v.y*cos(ang))-(v.omega*t.x);
         return Twist2D{tw.omega,tw.x,tw.y};
     }
     Transform2D Transform2D::inv() const{

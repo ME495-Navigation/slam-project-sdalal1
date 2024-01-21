@@ -1,0 +1,4 @@
+##Citations
+
+https://www.youtube.com/watch?v=PtFQ2XI5i2I - Used for qos setting setup
+https://docs.ros.org/en/diamondback/api/rviz/html/marker__test_8cpp_source.html - Markers Example
