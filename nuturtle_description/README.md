@@ -6,8 +6,8 @@ URDF files for Nuturtle <Champ>
 * The rqt_graph when all four robots are visualized (Nodes Only, Hide Debug) is:
 ![](images/rosgraph.svg)
 # Launch File Details
-* `<ros2 launch nuturtle_description load_one.launch.py --show-args>`
-  `Arguments (pass arguments as '<name>:=<value>'):
+* `<ros2 launch nuturtle_description load_one.launch.py --show-args>` </br>
+  `Arguments (pass arguments as 'name:=value'):
 
     'use_jsp':
         true (default): use joint state publishes,                false: no joint states published
@@ -19,10 +19,10 @@ URDF files for Nuturtle <Champ>
 
     'color':
         purple(default):change turtlebot color to purple,                red:change turtlebot color to red,                green:change turtlebot color to green,                blue:change turtlebot color to blue. Valid choices are: ['purple', 'red', 'green', 'blue']
-        (default: 'purple')
+        (default: 'purple') `
 `
-* `<ros2 launch nuturtle_description load_all.launch.xml --show-args>`
-  `Arguments (pass arguments as '<name>:=<value>'):
+* `<ros2 launch nuturtle_description load_all.launch.xml --show-args>` </br>
+  `Arguments (pass arguments as   'name:=value'):
 
     'use_jsp':
         true (default): use joint state publishes,                false: no joint states published

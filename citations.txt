@@ -2,3 +2,8 @@
 
 https://www.youtube.com/watch?v=PtFQ2XI5i2I - Used for qos setting setup
 https://docs.ros.org/en/diamondback/api/rviz/html/marker__test_8cpp_source.html - Markers Example
+https://stackoverflow.com/questions/20902945/reading-a-string-from-file-c - svg_testing
+https://get-help.robotigniteacademy.com/t/ros2-service-client-in-c-with-classes-with-node-inheritance/19647 - service setup
+
+https://chat.openai.com/share/cf6a88b9-b6e0-41d8-b10b-25aeb57af07a - chatgpt citations
+https://chat.openai.com/share/b804d2b3-d514-4eb5-af6c-e1217b32769c - chatgpt citations 

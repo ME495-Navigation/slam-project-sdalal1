@@ -44,14 +44,14 @@ target_compile_features(turtlelib PUBLIC cxx_std_17)
 
 # Create an executable from the following source code files
 # The Name of the executable creates a cmake "target"
-add_executable(frame src/frame_main.cpp)
+add_executable(frame_main src/frame_main.cpp)
 
 # Use target_link_libraries to add dependencies to a "target"
 # (e.g., a library or executable)
 # This will automatically add all required library files
 # that need to be linked
 # and paths to th locations of header files
-target_link_libraries(frame Eigen3::Eigen turtlelib)
+target_link_libraries(frame_main turtlelib)
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/turtlelib DESTINATION include)
@@ -60,9 +60,9 @@ install(DIRECTORY include/turtlelib DESTINATION include)
 # Also create CMake Export called projet_name-targets
 # The CMake Export contains files that allow other CMake projects
 # to find this project. It must be installed separately.
-install(TARGETS frame turtlelib EXPORT turtlelib-targets)
+install(TARGETS frame_main turtlelib EXPORT turtlelib-targets)
+configure_file(${CMAKE_SOURCE_DIR}/exercises/B6_frame_input.txt frame_input.txt COPYONLY)
 
-install(FILES exercises/B6_frame_input.txt DESTINATION build/)
 # The project_name-targets created by install(TARGETS) needs to be installed.
 # install(EXPORT ...) will generate a file called project_name-config.cmake
 # that contains the exported targets.
@@ -79,7 +79,7 @@ find_package(Doxygen)
 
 # Building documentation should be optional.
 # To build documentation pass -DBUILD_DOCS=ON when generating the build system
-option(BUILD_DOCS "Build the documentation" OFF)
+option(BUILD_DOCS "Build the documentation" ON)
 
 # build just because Doxygen is missing
 if(${DOXYGEN_FOUND} AND ${BUILD_DOCS})
@@ -104,10 +104,10 @@ if(BUILD_TESTING)
     add_executable(test_geometry2 tests/test_geometry2.cpp)
     add_executable(test_se2d tests/test_se2d.cpp)
     add_executable(test_svg tests/test_svg.cpp)
+
     target_link_libraries(test_geometry2 Catch2::Catch2WithMain turtlelib)
     target_link_libraries(test_se2d Catch2::Catch2WithMain turtlelib)
     target_link_libraries(test_svg Catch2::Catch2WithMain turtlelib)
-
 
     # register the test with CTest, telling it what executable to run
     add_test(NAME test_geometry2 COMMAND test_geometry2)

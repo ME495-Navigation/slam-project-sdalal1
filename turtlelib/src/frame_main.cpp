@@ -64,8 +64,8 @@ int main() {
     turtlelib::Svg testing;
     // turtlelib::Point2D pt{504.2 , 403.5};
     turtlelib::Point2D pta{p_a.x , p_a.y};
-    turtlelib::Point2D ptc{T_ab.operator()(p_b).x , T_ab.operator()(p_b).y};
-    turtlelib::Point2D ptb{T_ac.operator()(p_c).x , T_ac.operator()(p_c).y};
+    turtlelib::Point2D ptb{T_ab.operator()(p_b).x , T_ab.operator()(p_b).y};
+    turtlelib::Point2D ptc{T_ac.operator()(p_c).x , T_ac.operator()(p_c).y};
     turtlelib::Point2D vbhat{v_bhat.x , v_bhat.y};
     turtlelib::Point2D va{v_a.x, v_a.y};
     turtlelib::Point2D vc{v_c.x, v_c.y};

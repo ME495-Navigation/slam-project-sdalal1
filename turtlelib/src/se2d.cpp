@@ -38,14 +38,14 @@ namespace turtlelib{
     }
     Point2D Transform2D::operator()(Point2D p) const{
         Point2D pt;
-        pt.x=(p.x*(cos(ang)-sin(ang)))+t.x;
-        pt.y=(p.y*(cos(ang)+sin(ang)))+t.y;
+        pt.x=(p.x*cos(ang))-(p.y*sin(ang))+t.x;
+        pt.y=(p.y*cos(ang))+(p.x*sin(ang))+t.y;
         return pt;
     }
     Vector2D Transform2D::operator()(Vector2D v) const{
         Vector2D vec;
-        vec.x=(v.x*(cos(ang)-sin(ang)));
-        vec.y=(v.y*(cos(ang)+sin(ang)));
+        vec.x=(v.x*cos(ang))-(v.y*sin(ang));
+        vec.y=(v.y*cos(ang))+(v.x*sin(ang));
         return vec;
     }
     Twist2D Transform2D::operator()(Twist2D v) const{
@@ -102,11 +102,7 @@ namespace turtlelib{
     }
 
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs){
-        double angle = lhs.rotation();
-        Vector2D vector = lhs.translation();
-        angle+=rhs.rotation();
-        vector.x+=(rhs.translation().x*cos(lhs.rotation()))-(rhs.translation().y*sin(lhs.rotation()));
-        vector.y+=(rhs.translation().x*sin(lhs.rotation()))+(rhs.translation().y*cos(lhs.rotation()));
-        return Transform2D{vector,angle};
+        lhs *= rhs;
+        return lhs;
     }
 }

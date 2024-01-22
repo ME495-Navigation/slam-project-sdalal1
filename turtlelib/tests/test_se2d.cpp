@@ -69,9 +69,9 @@ namespace turtlelib{
         pt = trans.operator()(pt);
 
         REQUIRE_THAT(pt.x, 
-        Catch::Matchers::WithinAbs(1.1, 0.1));
+        Catch::Matchers::WithinAbs(2.2, 0.1));
         REQUIRE_THAT(pt.y, 
-        Catch::Matchers::WithinAbs(3.3, 0.1));
+        Catch::Matchers::WithinAbs(4.3, 0.1));
     }
 
     TEST_CASE("testing () operator for vector", "[vec()]"){
@@ -80,9 +80,9 @@ namespace turtlelib{
         vec = trans.operator()(vec);
 
         REQUIRE_THAT(vec.x, 
-        Catch::Matchers::WithinAbs(-1.4, 0.1));
+        Catch::Matchers::WithinAbs(-1.1, 0.1));
         REQUIRE_THAT(vec.y, 
-        Catch::Matchers::WithinAbs(1.1, 0.1));
+        Catch::Matchers::WithinAbs(1.4, 0.1));
     }
 
     TEST_CASE("testing () operator for twist", "[twist()]"){
@@ -92,11 +92,10 @@ namespace turtlelib{
         REQUIRE_THAT(twi.omega,
         Catch::Matchers::WithinAbs(PI/2, 0.1));
         REQUIRE_THAT(twi.x, 
-        Catch::Matchers::WithinAbs(2.2, 0.1));
+        Catch::Matchers::WithinAbs(4.081, 0.1));
         REQUIRE_THAT(twi.y, 
-        Catch::Matchers::WithinAbs(-0.8, 0.1));
+        Catch::Matchers::WithinAbs(-2.057, 0.1));
     }
-
     TEST_CASE("tesing the inv operator","[inverse]"){
         Transform2D trans{Vector2D{2.2,3.3}, PI/2};
         Transform2D inv = trans.inv();
