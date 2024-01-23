@@ -40,7 +40,7 @@
 
 using namespace std::chrono_literals;
 
-/// @brief Node to start simulation in RVIZ
+/// \brief Node to start simulation in RVIZ
 class Nusim : public rclcpp::Node
 {
 public:
@@ -120,7 +120,7 @@ private:
   std::vector<double> obs_x = {2.0, 3.2, 4.2};
   std::vector<double> obs_y = {3.0, 5.2, 2.1};
 
-  /// @brief Creates the obstacle an publishes it
+  /// \brief Creates the obstacle an publishes it
   void publish_obs()
   {
     int i = 0;
@@ -154,7 +154,7 @@ private:
     }
   }
 
-  /// @brief Creates the walls and publish it
+  /// \brief Creates the walls and publish it
   void publish_walls()
   {
     w1.header.stamp = this->get_clock()->now();
@@ -230,10 +230,10 @@ private:
 
   }
 
-  /// @brief creates a transform between nusim/world and red/base_foorprint
-  /// @param x The x translation of the robot
-  /// @param x The y translation of the robot
-  /// @param theta The rotation of the robot
+  /// \brief creates a transform between nusim/world and red/base_foorprint
+  /// \param x The x translation of the robot
+  /// \param x The y translation of the robot
+  /// \param theta The rotation of the robot
   void ground_frame_loc(double x, double y, double theta)
   {
     t.header.frame_id = "nusim/world";
@@ -250,7 +250,7 @@ private:
     t.transform.rotation.w = q.w();
   }
 
-  /// @brief Creates a timer to publish frames and timestep
+  /// \brief Creates a timer to publish frames and timestep
   void timer_callback()
   {
     auto time_msg = std_msgs::msg::UInt64();
@@ -262,8 +262,8 @@ private:
     tf_broadcaster_->sendTransform(t);
   }
 
-  /// @brief The service to teleport the bot in rviz
-  /// @param request The request to get the x, y and theta values
+  /// \brief The service to teleport the bot in rviz
+  /// \param request The request to get the x, y and theta values
   void teleport_cb(
     const std::shared_ptr<nusim::srv::Teleport::Request> request,
     const std::shared_ptr<nusim::srv::Teleport::Response>)
@@ -271,7 +271,7 @@ private:
     ground_frame_loc(request->x, request->y, request->theta);
   }
 
-  /// @brief The reset service to reset the simulation to its initial state
+  /// \brief The reset service to reset the simulation to its initial state
   void reset_cb(
     const std::shared_ptr<std_srvs::srv::Empty::Request>,
     const std::shared_ptr<std_srvs::srv::Empty::Response>)
@@ -285,7 +285,7 @@ private:
   size_t count_{0};
 };
 
-/// @brief The main function to spin the node
+/// \brief The main function to spin the node
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);

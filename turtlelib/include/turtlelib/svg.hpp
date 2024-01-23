@@ -11,6 +11,7 @@
 #include <fstream>
 
 namespace turtlelib{
+    /// \brief Class to create a SVG file
     class Svg
     {
     public:

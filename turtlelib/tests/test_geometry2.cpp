@@ -10,25 +10,25 @@ namespace turtlelib{
 TEST_CASE("Normalizing angle", "[normalize]"){
 
 REQUIRE_THAT(normalize_angle(PI), 
-        Catch::Matchers::WithinAbs(PI, 0.1));
+        Catch::Matchers::WithinAbs(PI, 0.01));
 
 REQUIRE_THAT(normalize_angle(-PI), 
-        Catch::Matchers::WithinAbs(-PI, 0.1));
+        Catch::Matchers::WithinAbs(-PI, 0.01));
 
 REQUIRE_THAT(normalize_angle(0.0), 
-        Catch::Matchers::WithinAbs(0.0, 0.1));
+        Catch::Matchers::WithinAbs(0.0, 0.01));
 
 REQUIRE_THAT(normalize_angle(PI/4), 
-        Catch::Matchers::WithinAbs(PI/4, 0.1));
+        Catch::Matchers::WithinAbs(PI/4, 0.01));
 
 REQUIRE_THAT(normalize_angle(-PI/4), 
-        Catch::Matchers::WithinAbs(-PI/4, 0.1));
+        Catch::Matchers::WithinAbs(-PI/4, 0.01));
 
 CHECK_THAT(normalize_angle(3*PI/2), 
-        Catch::Matchers::WithinAbs(-PI/2, 0.1));
+        Catch::Matchers::WithinAbs(-PI/2, 0.01));
 
 CHECK_THAT(normalize_angle(-5*PI/2), 
-        Catch::Matchers::WithinAbs(-PI/2, 0.1));
+        Catch::Matchers::WithinAbs(-PI/2, 0.01));
 }
 
 TEST_CASE("testing normalize function", "[normalize]"){
@@ -36,9 +36,9 @@ Vector2D vec{1,1};
 vec = normalize(vec);
 
 REQUIRE_THAT(vec.x, 
-        Catch::Matchers::WithinAbs(0.7071, 0.1));
+        Catch::Matchers::WithinAbs(0.7071, 0.01));
 REQUIRE_THAT(vec.y, 
-        Catch::Matchers::WithinAbs(0.7071, 0.1));
+        Catch::Matchers::WithinAbs(0.7071, 0.01));
 
 }
 
