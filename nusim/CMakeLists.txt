@@ -33,6 +33,24 @@ install(TARGETS
   nusim
   DESTINATION lib/${PROJECT_NAME})
 
+  find_package(Doxygen)
+
+  # Building documentation should be optional.
+  # To build documentation pass -DBUILD_DOCS=ON when generating the build system
+  option(BUILD_DOCS "Build the documentation" ON)
+
+  # build just because Doxygen is missing
+  if(${DOXYGEN_FOUND} AND ${BUILD_DOCS})
+    # Turn the README.md into the homepage of the doxygen docs
+    set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
+
+    # Tell Doxygen where to find the documentation
+    doxygen_add_docs(doxygen include/ src/ README.md ALL)
+
+    # The documentation will be in the build/html directory
+    # The main page is build/html/index.html
+  endif()
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

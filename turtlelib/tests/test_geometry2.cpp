@@ -31,6 +31,18 @@ CHECK_THAT(normalize_angle(-5*PI/2),
         Catch::Matchers::WithinAbs(-PI/2, 0.1));
 }
 
+TEST_CASE("testing normalize function", "[normalize]"){
+Vector2D vec{1,1};
+vec = normalize(vec);
+
+REQUIRE_THAT(vec.x, 
+        Catch::Matchers::WithinAbs(0.7071, 0.1));
+REQUIRE_THAT(vec.y, 
+        Catch::Matchers::WithinAbs(0.7071, 0.1));
+
+}
+
+
 TEST_CASE("testing - operator", "-"){
 Point2D head{5.0,10.0};
 Point2D tail{2.0,2.0};

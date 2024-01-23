@@ -285,6 +285,7 @@ private:
   size_t count_{0};
 };
 
+/// @brief The main function to spin the node
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);

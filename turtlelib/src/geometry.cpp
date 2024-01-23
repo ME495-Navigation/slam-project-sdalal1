@@ -31,6 +31,11 @@ std::istream & operator>>(std::istream & is, turtlelib::Point2D & p){
     return is;
 }
 
+Vector2D normalize(Vector2D v){
+        double dim = std::sqrt(pow(v.x,2) + pow(v.y,2));
+        return {v.x/dim, v.y/dim};
+}
+
 Vector2D operator-(const Point2D & head, const Point2D & tail){
     Vector2D coord;
     coord.x = head.x - tail.x;

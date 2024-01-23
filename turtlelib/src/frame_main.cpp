@@ -41,9 +41,7 @@ int main() {
 
     v_a = T_ab.operator()(v_b);
     v_c = T_cb.operator()(v_b);
-
-    v_bhat.x = v_b.x/(std::sqrt(pow(v_b.x,2) + pow(v_b.y,2)));
-    v_bhat.y = v_b.y/(std::sqrt(pow(v_b.x,2) + pow(v_b.y,2)));
+    v_bhat = turtlelib::normalize(v_b);
 
     std::cout<<"v_bhat: "<<v_bhat<<"\n";
     std::cout<<"v_a: "<<v_a<<"\n";
