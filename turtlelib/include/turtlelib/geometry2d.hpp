@@ -94,7 +94,63 @@ namespace turtlelib
 
         /// \brief the y coordinate
         double y = 0.0;
+
+        /// \brief Add vector to the existing vector
+        /// \param add vector to be added
+        /// \return addition of two vectors
+        Vector2D& operator+=(Vector2D add);
+
+        /// \brief Subtracting vector to the existing vector
+        /// \param sub vector to be added
+        /// \return subtraction of two vectors
+        Vector2D& operator-=(Vector2D sub);
+
+        /// \brief Multiplicating vector to the existing double 
+        /// \param scalar scalar to be multiplied 
+        /// \return subtraction of two vectors
+        Vector2D& operator*=(double scalar);
     };
+
+    /// \brief Addition of two vectors
+    /// \param a first vector
+    /// \param b second vector 
+    /// \return a vector after addition of both vectors
+    Vector2D operator+(Vector2D a, Vector2D b);
+
+    /// \brief Subtracting two vectors
+    /// \param a first vector
+    /// \param b second vector 
+    /// \return a vector after subtraction of both vectors
+    Vector2D operator-(Vector2D a, Vector2D b);
+    
+    /// \brief Multiplication of scalar to a vector
+    /// \param scalar first scalar as param
+    /// \param vec vector as a second param
+    /// \return a vector after multiplicating a scalar with vector 
+    Vector2D operator*(double scalar, Vector2D vec);
+
+    /// \brief Multiplication of vector to a scalar
+    /// \param vec vector as first param
+    /// \param scalar scalar as second param
+    /// \return a vector after multiplicating a vector with scalar
+    Vector2D operator*(Vector2D vec, double scalar);
+
+    /// \brief Dot product of two vector
+    /// \param a vector one
+    /// \param b vector two
+    /// \return a scalar which is returned after dot product
+    double dot(Vector2D a, Vector2D b);
+
+    /// \brief Magnitude of a vector
+    /// \param a vector one magnitude
+    /// \return scalar magnitude of the vector
+    double magnitude(Vector2D a);
+
+    /// \brief An angle between two vectors
+    /// \param a vector one
+    /// \param b vector two
+    /// \return Returns an angle in radians
+    double angle(Vector2D a,Vector2D b);
 
     /// \brief Normalising a vector
     /// \param v A vector to be normalised
