@@ -96,6 +96,28 @@ TEST_CASE("Vector* funct","[Vec*]"){
                 Catch::Matchers::WithinAbs(4, 0.01));
 }
 
+TEST_CASE("dot product testing","[dot_product]"){
+        Vector2D a{1,2};
+        Vector2D b{2,3};
+        double c = dot(a,b);
+        REQUIRE_THAT(c,
+                Catch::Matchers::WithinAbs(8, 0.01));
+}
+
+TEST_CASE("magnitude testing","[vector_mag]"){
+        Vector2D a{1,2};
+        double c = magnitude(a);
+        REQUIRE_THAT(c,
+                Catch::Matchers::WithinAbs(sqrt(5), 0.01));
+}
+
+TEST_CASE("angle testing","[vector_angle]"){
+        Vector2D a{1,2};
+        Vector2D b{2,1};
+        double c = angle(a,b);
+        REQUIRE_THAT(c,
+                Catch::Matchers::WithinAbs(acos(0.8), 0.01));
+}
 
 TEST_CASE("testing normalize function", "[normalize]"){
         Vector2D vec{1,1};
@@ -107,7 +129,6 @@ TEST_CASE("testing normalize function", "[normalize]"){
                 Catch::Matchers::WithinAbs(0.7071, 0.01));
 
 }
-
 
 TEST_CASE("testing - operator", "-"){
         Point2D head{5.0,10.0};

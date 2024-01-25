@@ -71,7 +71,7 @@ Vector2D operator*(Vector2D a, double s){
 
 double dot(Vector2D a, Vector2D b){
     double pro;
-    pro = (a.x*b.x)+(a.y+b.y);
+    pro = (a.x*b.x)+(a.y*b.y);
     return pro;
 }
 
