@@ -1,0 +1,9 @@
+repositories:
+  nuturtlebot_msgs:
+    type: git
+    url: git@github.com:ME495-Navigation/nuturtlebot_msgs.git
+    version: humble
+  slam_everything:
+    type: git
+    url: git@github.com:ME495-Navigation/slam-project-sdalal1.git
+    version: main

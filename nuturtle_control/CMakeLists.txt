@@ -7,9 +7,40 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(turtlelib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
+add_executable(turtle_control src/turtle_control.cpp)
+ament_target_dependencies(turtle_control turtlelib rclcpp std_msgs std_srvs geometry_msgs)
+
+target_link_libraries(turtle_control turtlelib::turtlelib "${cpp_typesupport_target}")
+
+install(TARGETS
+  turtle_control
+  DESTINATION lib/${PROJECT_NAME})
+
+find_package(Doxygen)
+
+# Building documentation should be optional.
+# To build documentation pass -DBUILD_DOCS=ON when generating the build system
+option(BUILD_DOCS "Build the documentation" OFF)
+
+# build just because Doxygen is missing
+if(${DOXYGEN_FOUND} AND ${BUILD_DOCS})
+  # Turn the README.md into the homepage of the doxygen docs
+  set(DOXYGEN_USE_MDFILE_AS_MAINPAGE README.md)
+
+  # Tell Doxygen where to find the documentation
+  doxygen_add_docs(doxygen src/ README.md ALL)
+
+  # The documentation will be in the build/html directory
+  # The main page is build/html/index.html
+endif()
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -22,5 +53,9 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+install(DIRECTORY src
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_package()
