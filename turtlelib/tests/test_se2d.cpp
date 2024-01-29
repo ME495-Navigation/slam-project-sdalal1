@@ -152,6 +152,39 @@ namespace turtlelib{
         Catch::Matchers::WithinAbs(4.4,0.01));
     }
 
+    TEST_CASE("Testing Twist integrate pure rotation", "[twist_rotation]"){
+        Twist2D t{0.0,1.2,3.3};
+        auto t_rot = integrate_twist(t);
+        REQUIRE_THAT(t_rot.rotation(),
+        Catch::Matchers::WithinAbs(0.0, 0.01));
+        REQUIRE_THAT(t_rot.translation().x,
+        Catch::Matchers::WithinAbs(1.2, 0.01));
+        REQUIRE_THAT(t_rot.translation().y,
+        Catch::Matchers::WithinAbs(3.3, 0.01));
+    }
+
+    TEST_CASE("Testing Twist integrate pure translation", "[twist_translation]"){
+        Twist2D t{1.2,0.0,0.0};
+        auto t_rot = integrate_twist(t);
+        REQUIRE_THAT(t_rot.rotation(),
+        Catch::Matchers::WithinAbs(1.2, 0.01));
+        REQUIRE_THAT(t_rot.translation().x,
+        Catch::Matchers::WithinAbs(0.0, 0.01));
+        REQUIRE_THAT(t_rot.translation().y,
+        Catch::Matchers::WithinAbs(0.0, 0.01));
+    }
+
+    TEST_CASE("Testing Twist integrate translation & rotation", "[twist_translation_rotation]"){
+        Twist2D t{1.57,2.2,1.33};
+        auto t_rot = integrate_twist(t);
+        REQUIRE_THAT(t_rot.rotation(),
+        Catch::Matchers::WithinAbs(1.57, 0.01));
+        REQUIRE_THAT(t_rot.translation().x,
+        Catch::Matchers::WithinAbs(0.55, 0.01));
+        REQUIRE_THAT(t_rot.translation().y,
+        Catch::Matchers::WithinAbs(2.247, 0.01));
+    }
+
     TEST_CASE("testing << with trabsform2d","[Transform2D<<]"){
         Transform2D trans{Vector2D{2.4,4.4}, 2.5};
         std::stringstream os;

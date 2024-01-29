@@ -19,7 +19,7 @@ find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # you don't need or want to.
 # name is the name of the library without the extension or lib prefix
 # name creates a cmake "target"
-add_library(turtlelib src/geometry.cpp src/se2d.cpp src/svg.cpp)
+add_library(turtlelib src/geometry.cpp src/se2d.cpp src/svg.cpp src/diff_drive.cpp)
 
 # Use target_include_directories so that #include"mylibrary/header.hpp" works
 # The use of the <BUILD_INTERFACE> and <INSTALL_INTERFACE> is because when
@@ -104,15 +104,19 @@ if(BUILD_TESTING)
     add_executable(test_geometry2 tests/test_geometry2.cpp)
     add_executable(test_se2d tests/test_se2d.cpp)
     add_executable(test_svg tests/test_svg.cpp)
+    add_executable(test_diff_drive tests/test_diff_drive.cpp)
+
 
     target_link_libraries(test_geometry2 Catch2::Catch2WithMain turtlelib)
     target_link_libraries(test_se2d Catch2::Catch2WithMain turtlelib)
     target_link_libraries(test_svg Catch2::Catch2WithMain turtlelib)
+    target_link_libraries(test_diff_drive Catch2::Catch2WithMain turtlelib)
 
     # register the test with CTest, telling it what executable to run
     add_test(NAME test_geometry2 COMMAND test_geometry2)
     add_test(NAME test_se2d COMMAND test_se2d)
     add_test(NAME test_svg COMMAND test_svg)
+    add_test(NAME test_diff_drive COMMAND test_diff_drive)
 
 
 endif() 

@@ -29,12 +29,13 @@ namespace turtlelib{
     Transform2D::Transform2D(double radians){
         t.x = 0.0;
         t.y = 0.0;
-        ang=radians;
+        ang=normalize_angle(radians);
     }
     Transform2D::Transform2D(Vector2D trans, double radians){
         t.x = trans.x;
         t.y = trans.y;
-        ang=radians;
+        ang=normalize_angle(radians);
+
     }
     Point2D Transform2D::operator()(Point2D p) const{
         Point2D pt;
@@ -76,6 +77,26 @@ namespace turtlelib{
 
     double Transform2D::rotation() const{
         return ang;
+    }
+
+    Transform2D integrate_twist(Twist2D twi){
+        auto w = twi.omega;
+        auto x = twi.x;
+        auto y = twi.y;
+
+        if(almost_equal(w,0.0,0.0001) == true){
+            Transform2D Tbbprime(Vector2D{x,y});
+            return Tbbprime;
+        }
+        else{
+            Transform2D Tsb(Vector2D{y/w,-x/w});
+            Transform2D Tssprime(w);
+            Transform2D Tsprimebprime(Vector2D{y/w,-x/w});
+            auto Tbs = Tsb.inv();
+            auto Tbsprime = Tbs * Tssprime;
+            auto Tbbprime = Tbsprime * Tsprimebprime;
+            return Tbbprime;
+        }
     }
 
     std::ostream & operator<<(std::ostream & os, const Transform2D & tf){

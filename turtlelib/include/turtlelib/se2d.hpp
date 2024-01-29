@@ -100,6 +100,10 @@ namespace turtlelib
         double ang;
     };
 
+    /// \brief To find the twist after one unit time in body frame
+    /// \param twi The current twist of the turtlebot
+    /// \return A tranformation 1 timestep away
+    Transform2D integrate_twist(Twist2D twi);
 
     /// \brief should print a human readable version of the transform:
     /// An example output:
