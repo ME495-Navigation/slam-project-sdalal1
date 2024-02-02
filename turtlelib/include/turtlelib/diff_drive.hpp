@@ -52,6 +52,10 @@ namespace turtlelib
         /// @return the track width of the member
         double get_wheel_track() const;
 
+        /// @brief get the twist
+        /// @return Teh body twist
+        Twist2D get_twist() const;
+
         /// @brief calculation fo the forward kinematics after a timestep
         /// @param left_prime The left wheel orienattion after time delta t
         /// @param right_prime The right wheel orientation after time delta t
@@ -67,10 +71,12 @@ namespace turtlelib
         wheel_positions psi;
         /// @brief The orienatation and position of the bot
         Transform2D trans;
-        /// @brief the track distacne of between wheels
+        /// \brief the track distacne of between wheels
         double wheel_track;
         /// \brief the radius of the wheel 
         double wheel_radius;
+        /// \brief the body twist
+        turtlelib::Twist2D twist;
     };
 
 }

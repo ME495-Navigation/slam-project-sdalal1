@@ -84,7 +84,7 @@ namespace turtlelib{
         auto x = twi.x;
         auto y = twi.y;
 
-        if(almost_equal(w,0.0,0.0001) == true){
+        if(almost_equal(w,0.0,1e-5) == true){
             Transform2D Tbbprime(Vector2D{x,y});
             return Tbbprime;
         }

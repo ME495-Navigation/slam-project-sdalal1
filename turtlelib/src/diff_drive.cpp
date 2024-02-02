@@ -8,6 +8,7 @@ DiffDrive::DiffDrive(double track, double radius){
     wheel_radius = radius;
     trans=Transform2D();
     psi = wheel_positions{0.0,0.0};
+    twist = Twist2D{0.0,0.0,0.0};
 }
 
 DiffDrive::DiffDrive(Transform2D t, double track, double radius){
@@ -15,6 +16,7 @@ DiffDrive::DiffDrive(Transform2D t, double track, double radius){
     wheel_track = track;
     wheel_radius = radius;
     psi = wheel_positions{0.0,0.0};
+    twist = Twist2D{0.0,0.0,0.0};
 }
 
 wheel_positions DiffDrive::get_wheel_angle(){
@@ -33,7 +35,12 @@ double DiffDrive::get_wheel_track() const{
     return wheel_track;
 }
 
-void DiffDrive::compute_fk(double l_prime, double r_prime){
+Twist2D DiffDrive::get_twist() const{
+    return twist;
+}
+
+void DiffDrive::compute_fk(double l_prime, double r_prime)
+{
     auto phi = (wheel_radius/wheel_track) * (r_prime - l_prime);
     auto x_dot = (wheel_radius/2) * cos(trans.rotation()) * (l_prime+r_prime);
     auto y_dot = (wheel_radius/2) * sin(trans.rotation()) * (l_prime+r_prime);
@@ -45,7 +52,11 @@ void DiffDrive::compute_fk(double l_prime, double r_prime){
     auto new_x = trans.translation().x + x_dot ; 
     auto new_y = trans.translation().y + y_dot ;
 
-    trans = Transform2D{Vector2D{new_x,new_y}, new_phi};
+    twist.omega = new_phi;
+    twist.x = new_x;
+    twist.y = new_y;
+
+    trans = turtlelib::integrate_twist(twist);
 }
 
 wheel_positions DiffDrive::compute_ik(Twist2D twi){

@@ -42,14 +42,19 @@ namespace turtlelib{
             Catch::Matchers::WithinAbs(0.0, 1e-5));
     }
 
-    TEST_CASE("forward motion tetsing", "[forward]"){
+    TEST_CASE("forward ik motion testing", "[forward_ik]"){
         auto dif = DiffDrive(1.3, 0.5);
         auto wheel = dif.compute_ik(Twist2D{0.0, 0.2 , 0.0});
         REQUIRE_THAT(wheel.left, 
             Catch::Matchers::WithinAbs(0.4, 1e-5));
         REQUIRE_THAT(wheel.right, 
             Catch::Matchers::WithinAbs(0.4, 1e-5));
-        
+    }
+
+     TEST_CASE("forward fk motion testing", "[forward_fk]"){
+        auto dif = DiffDrive(1.3, 0.5);
+        turtlelib::wheel_positions wheel{0.4,0.4};
+
         dif.compute_fk(wheel.left,wheel.right);
 
         REQUIRE_THAT(dif.get_transformation().rotation(), 
@@ -60,14 +65,17 @@ namespace turtlelib{
             Catch::Matchers::WithinAbs(0.0, 1e-5)); 
     }
 
-    TEST_CASE("rotation motion tetsing", "[rotation]"){
+    TEST_CASE("rotation ik motion testing", "[rotation_ik]"){
         auto dif = DiffDrive(1.3, 0.5);
         auto wheel = dif.compute_ik(Twist2D{1.57, 0.0 , 0.0});
         REQUIRE_THAT(wheel.left, 
             Catch::Matchers::WithinAbs(-2.041, 1e-5));
         REQUIRE_THAT(wheel.right, 
             Catch::Matchers::WithinAbs(2.041, 1e-5));
-        
+    }
+    TEST_CASE("rotation ik motion testing", "[rotation_fk]"){   
+        auto dif = DiffDrive(1.3, 0.5);
+        turtlelib::wheel_positions wheel{-2.041,2.041};
         dif.compute_fk(wheel.left,wheel.right);
 
         REQUIRE_THAT(dif.get_transformation().rotation(), 
@@ -78,22 +86,24 @@ namespace turtlelib{
             Catch::Matchers::WithinAbs(0.0, 1e-5)); 
     }
 
-    TEST_CASE("rotation motion circle", "[circle]"){
+    TEST_CASE("rotation ik motion circle", "[circle_ik]"){
         auto dif = DiffDrive(1.3, 0.5);
         auto wheel = dif.compute_ik(Twist2D{1.57, 0.2 , 0.0});
         REQUIRE_THAT(wheel.left, 
             Catch::Matchers::WithinAbs(-1.641, 1e-5));
         REQUIRE_THAT(wheel.right, 
             Catch::Matchers::WithinAbs(2.441, 1e-5));
-        
+    }
+    TEST_CASE("rotation fk motion circle", "[circle_fk]"){
+        auto dif = DiffDrive(1.3, 0.5);
+        turtlelib::wheel_positions wheel{-1.641,2.441};
         dif.compute_fk(wheel.left,wheel.right);
-
         REQUIRE_THAT(dif.get_transformation().rotation(), 
             Catch::Matchers::WithinAbs(1.57, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().x, 
-            Catch::Matchers::WithinAbs(0.2, 1e-5));
+            Catch::Matchers::WithinAbs(0.1273884946, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().y, 
-            Catch::Matchers::WithinAbs(0.0, 1e-5)); 
+            Catch::Matchers::WithinAbs(0.1272870921, 1e-5)); 
     }
 
     TEST_CASE("rotation motion exception", "[exception]"){

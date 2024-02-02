@@ -66,7 +66,7 @@ private:
   double motor_cmd_per_rad_sec_ = 0.0;
   double encoder_ticks_per_rad_ = 0.0;
   double collision_radius_ = 0.0;
-  double checker = false;
+  bool checker = false;
   nuturtlebot_msgs::msg::SensorData old_sensor_data;
 
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velo_subscription;
@@ -120,7 +120,7 @@ private:
     auto current_time = msg->stamp;
     auto last_timestamp = old_sensor_data.stamp.nanosec;
 
-    auto dt = current_time.nanosec - last_timestamp;
+    auto dt = (current_time.nanosec - last_timestamp)*(1e-9);
     js_pub.velocity = std::vector<double>(2);
     js_pub.velocity.at(0) = (left_en - old_left_en)/(dt * encoder_ticks_per_rad_);
     js_pub.velocity.at(1) = (right_en - old_right_en)/(dt * encoder_ticks_per_rad_);
