@@ -18,6 +18,7 @@ find_package(nuturtlebot_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(catch_ros2 REQUIRED)
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -25,6 +26,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}_srv
   "srv/InitialPose.srv"
+  "srv/Control.srv"
   LIBRARY_NAME ${PROJECT_NAME}
 )
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME}_srv "rosidl_typesupport_cpp")
@@ -41,11 +43,25 @@ add_executable(circle src/circle.cpp)
 ament_target_dependencies(circle turtlelib rclcpp std_srvs geometry_msgs)
 target_link_libraries(circle turtlelib::turtlelib "${cpp_typesupport_target}")
 
+add_executable(turtle_control_test test/turtle_control_test.cpp)
+ament_target_dependencies(turtle_control_test rclcpp geometry_msgs nuturtlebot_msgs sensor_msgs)
+target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
+
 install(TARGETS
   turtle_control
   odometry
   circle
+  turtle_control_test
   DESTINATION lib/${PROJECT_NAME})
+
+install(FILES
+test/turtle_control_test.launch.xml
+DESTINATION share/${PROJECT_NAME}
+)
+
+catch_ros2_add_integration_test(test_1
+  LAUNCH_FILE turtle_control_test.launch.xml  # example in Python
+)
 
 find_package(Doxygen)
 
