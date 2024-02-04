@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>
+   <arg name="cmd_src"/>
+   <arg name="robot"/>
+   <arg name="use_rviz"/>
+
+   <group if="$(eval '\'$(var cmd_src)\' == \'circle\'')">
+   <node pkg="nuturtle_control" exec="circle"></node>
+
+   </group>
+
+   <group if="$(eval '\'$(var cmd_src)\' == \'teleop\'')">
+   <node pkg="turtlesim" exec="turtle_teleop_key"></node>
+   
+   </group>
+
+   <group if="$(eval '\'$(var use_jsp)\' == \'use_jsp\'')">
+   <node pkg="joint_state_publisher" exec="joint_state_publisher"/>
+   </group>
+
+   <node pkg="robot_state_publisher" exec="robot_state_publisher">
+	   <param name ="robot_description" value="$(command 'xacro $(find-pkg-share turtle_brick)/turtle.urdf.xacro')"/>
+   </node>
+   <node pkg="rviz2" exec="rviz2" name="rviz2" args="-d $(find-pkg-share turtle_brick)/$(var rviz_config)"/>
+</launch>

@@ -49,11 +49,12 @@ private:
   std::string odom_id;
   std::string wheel_left;
   std::string wheel_right;
-  double wheel_radius_ = 0.0;
-  double track_width_ = 0.0;
+  double wheel_radius_ = 0.033;
+  double track_width_ = 0.16;
   bool checker = false;
-  sensor_msgs::msg::JointState old_js;
-  turtlelib::DiffDrive diff{track_width_, wheel_radius_};
+  sensor_msgs::msg::JointState old_js, js_pos;
+  turtlelib::Transform2D tr{};
+  turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
   nav_msgs::msg::Odometry odom_pub = nav_msgs::msg::Odometry();
   geometry_msgs::msg::TransformStamped t = geometry_msgs::msg::TransformStamped();
 
@@ -63,21 +64,29 @@ private:
   rclcpp::Service<nuturtle_control::srv::InitialPose>::SharedPtr srv_initial_pose;
 
   void joint_callback(const sensor_msgs::msg::JointState::SharedPtr msg){
-    auto js_pos = msg->position;
-    auto js_velo = msg->velocity;
+    // RCLCPP_INFO_STREAM(this->get_logger(), "in joint callback pose");
+    js_pos.position = msg->position;
+    // auto js_velo = msg->velocity;
     if(checker){
       auto old_js_left = old_js.position.at(0);
       auto old_js_right = old_js.position.at(1);
-      auto pos_left = js_pos.at(0);
-      auto pos_right = js_pos.at(1);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "old_left"<<old_js_left);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "old_right"<<old_js_right);
+
+      auto pos_left = js_pos.position.at(0);
+      auto pos_right = js_pos.position.at(1);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "new_left"<<pos_left);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "new_right"<<pos_right);
 
       auto delta_js_left = pos_left - old_js_left;
       auto delta_js_right = pos_right - old_js_right;
 
       diff.compute_fk(delta_js_left, delta_js_right);
-      
-      turtlelib::Transform2D transformation;
-      transformation = diff.get_transformation();
+      // RCLCPP_INFO_STREAM(this->get_logger(), "left delta"<<delta_js_left);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "right delta"<<delta_js_right);
+
+      auto transformation = diff.get_transformation();
+      // RCLCPP_INFO_STREAM(this->get_logger(), "transformation" << transformation);
       
       odom_pub.header.stamp = this->get_clock()->now();
       odom_pub.header.frame_id = odom_id;
@@ -121,13 +130,16 @@ private:
   void initial_pose_callback(
     const std::shared_ptr<nuturtle_control::srv::InitialPose::Request> request,
     const std::shared_ptr<nuturtle_control::srv::InitialPose::Response>){
+      // RCLCPP_INFO_STREAM(this->get_logger(), "in inital _callback pose");
       double x_pos = request->x;
       double y_pos = request->y;
       auto theta_pos = request->theta;
+      // checker = false;
 
       turtlelib::Transform2D trans{turtlelib::Vector2D{x_pos,y_pos}, theta_pos};
       turtlelib::DiffDrive new_diff{trans,track_width_, wheel_radius_};
       diff = new_diff;
+      // checker=true;
   };
 };
 

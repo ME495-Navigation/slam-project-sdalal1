@@ -105,14 +105,12 @@ private:
   void sensor_callback(const nuturtlebot_msgs::msg::SensorData::SharedPtr msg){
     
     sensor_msgs::msg::JointState js_pub;
-    
-
     auto left_en = msg->left_encoder;
     auto right_en = msg->right_encoder;
     auto current_time = msg->stamp;
     js_pub.header.stamp = current_time;
     // js_pub.header.stamp.nanosec = current_time.nanosec;
-
+    js_pub.name ={"wheel_left_joint","wheel_right_joint"};
     auto left_joint = (left_en)/encoder_ticks_per_rad_;
     auto right_joint = (right_en)/encoder_ticks_per_rad_;
 

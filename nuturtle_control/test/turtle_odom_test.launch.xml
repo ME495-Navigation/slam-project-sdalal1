@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+<catch2_launch_file description='Odom Node test'/>
+    <node pkg="nuturtle_control" exec="odometry" name="odometry"/>
+    <catch2_integration_test_node pkg="nuturtle_control" exec="turtle_odom_test" name="turtle_odom_test"></catch2_integration_test_node>
+</launch>

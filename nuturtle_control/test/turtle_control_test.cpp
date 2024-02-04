@@ -84,13 +84,16 @@ while (
 
 double left_angle, left_velo, right_angle, right_velo;
 void joint_callback(sensor_msgs::msg::JointState::SharedPtr msg){
-    auto timestamp = msg->header.stamp.nanosec;
+    // auto timestamp = msg->header.stamp.nanosec;
     // std::cout<<"time"<<timestamp;
     // std::cout<<"position_end"<<*(msg->position.end());
-    left_angle = msg->position.at(0);
-    right_angle = msg->position.at(1);
+    if(msg->header.stamp.nanosec !=0){
+    auto pos = msg->position;
+    left_angle = pos[0];
+    right_angle = pos[1];
     left_velo = msg->velocity.at(0);
     right_velo = msg->velocity.at(1);
+    }
 };
 
 nuturtlebot_msgs::msg::SensorData sensor_test = nuturtlebot_msgs::msg::SensorData();
@@ -99,15 +102,18 @@ nuturtlebot_msgs::msg::SensorData sensor_test2 = nuturtlebot_msgs::msg::SensorDa
 TEST_CASE("Joint state calculation", "[joint_state]"){
 
 auto node = rclcpp::Node::make_shared("turtle_control");
+// rclcpp::Time ti = rclcpp::Time(0);
 
 auto publisher_sensor = node->create_publisher<nuturtlebot_msgs::msg::SensorData>("sensor_data", 10);
-sensor_test.stamp.nanosec = rclcpp::Clock().now().nanoseconds();
+sensor_test.stamp.nanosec = 0;
 sensor_test.left_encoder = 126.0;
 sensor_test.right_encoder = 126.0;
 
-sensor_test2.stamp.nanosec = rclcpp::Clock().now().nanoseconds() + (100*1e9);
+sensor_test2.stamp.nanosec = 1e9;
 sensor_test2.left_encoder = 156.0;
 sensor_test2.right_encoder = 156.0;
+
+
 
 auto sub_joint_state = node->create_subscription<sensor_msgs::msg::JointState>(
 "joint_states", 
@@ -121,15 +127,13 @@ while (
   )
   {
     // Repeatedly check for the dummy service until its found
-    
-    publisher_sensor->publish(sensor_test);
-    publisher_sensor->publish(sensor_test2);
     rclcpp::spin_some(node);
+    publisher_sensor->publish(sensor_test);
+    publisher_sensor->publish(sensor_test2); 
   }
-  rclcpp::spin_some(node);
   // Test assertions - check that the dummy node was found
-  CHECK_THAT(left_angle, Catch::Matchers::WithinAbs(82139.2299322029, 1e-5));
-  CHECK_THAT(right_angle, Catch::Matchers::WithinAbs(82139.2299322029, 1e-5));
+  CHECK_THAT(left_angle, Catch::Matchers::WithinAbs(101696.1894398703, 1e-5));
+  CHECK_THAT(right_angle, Catch::Matchers::WithinAbs(101696.1894398703, 1e-5));
 //   CHECK_THAT(left_velo, Catch::Matchers::WithinAbs(-6351.2815257095, 1e-5));
 //   CHECK_THAT(right_velo, Catch::Matchers::WithinAbs(-6351.2815257095, 1e-5));
 

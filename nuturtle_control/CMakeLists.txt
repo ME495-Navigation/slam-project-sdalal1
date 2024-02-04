@@ -47,22 +47,32 @@ add_executable(turtle_control_test test/turtle_control_test.cpp)
 ament_target_dependencies(turtle_control_test rclcpp geometry_msgs nuturtlebot_msgs sensor_msgs)
 target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
 
+add_executable(turtle_odom_test test/turtle_odom_test.cpp)
+ament_target_dependencies(turtle_odom_test turtlelib rclcpp std_srvs geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros)
+target_link_libraries(turtle_odom_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
+
+
 install(TARGETS
   turtle_control
   odometry
   circle
   turtle_control_test
+  turtle_odom_test
   DESTINATION lib/${PROJECT_NAME})
 
 install(FILES
 test/turtle_control_test.launch.xml
+test/turtle_odom_test.launch.xml
 DESTINATION share/${PROJECT_NAME}
 )
 
 catch_ros2_add_integration_test(test_1
-  LAUNCH_FILE turtle_control_test.launch.xml  # example in Python
+  LAUNCH_FILE turtle_control_test.launch.xml 
 )
 
+catch_ros2_add_integration_test(test_2
+  LAUNCH_FILE turtle_odom_test.launch.xml 
+)
 find_package(Doxygen)
 
 # Building documentation should be optional.
