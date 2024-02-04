@@ -103,7 +103,7 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(DIRECTORY src srv
+install(DIRECTORY src srv launch config
   DESTINATION share/${PROJECT_NAME}/
 )
 

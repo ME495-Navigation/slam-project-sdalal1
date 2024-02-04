@@ -37,6 +37,8 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "rclcpp/qos.hpp"
 #include "rmw/types.h"
+#include "nuturtlebot_msgs/msg/sensor_data.hpp"
+#include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 
 using namespace std::chrono_literals;
 
@@ -99,6 +101,10 @@ private:
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr publisher_timestep;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_walls;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_obs;
+
+  // C.7 sub
+  rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr red_wheel_sub;
+
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 

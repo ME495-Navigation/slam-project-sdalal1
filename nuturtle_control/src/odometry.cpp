@@ -35,6 +35,7 @@ public:
     wheel_left = get_parameter("wheel_left").as_string();
     wheel_right = get_parameter("wheel_right").as_string();
 
+    RCLCPP_INFO_STREAM(this->get_logger(), "body_id"<<body_id);
     joint_subscription = create_subscription<sensor_msgs::msg::JointState>(
         "joint_states", 10, std::bind(&Odometry::joint_callback, this, std::placeholders::_1));
     srv_initial_pose =
@@ -68,6 +69,7 @@ private:
     js_pos.position = msg->position;
     // auto js_velo = msg->velocity;
     if(checker){
+      RCLCPP_INFO_STREAM(this->get_logger(), "cchecker_triggered");
       auto old_js_left = old_js.position.at(0);
       auto old_js_right = old_js.position.at(1);
       // RCLCPP_INFO_STREAM(this->get_logger(), "old_left"<<old_js_left);

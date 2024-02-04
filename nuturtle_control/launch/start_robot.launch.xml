@@ -1,25 +1,73 @@
 <?xml version="1.0"?>
 <launch>
-   <arg name="cmd_src"/>
-   <arg name="robot"/>
-   <arg name="use_rviz"/>
+  <arg name="cmd_src" default="circle"/>
+  <arg name="robot" default="nusim"/>
+  <arg name="use_rviz" default="true"/>
 
-   <group if="$(eval '\'$(var cmd_src)\' == \'circle\'')">
-   <node pkg="nuturtle_control" exec="circle"></node>
 
-   </group>
+<!-- red and blue launch configuration -->
+<node pkg="rviz2" exec="rviz2" name="rviz2" 
+if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"
 
-   <group if="$(eval '\'$(var cmd_src)\' == \'teleop\'')">
-   <node pkg="turtlesim" exec="turtle_teleop_key"></node>
-   
-   </group>
+args="-d $(find-pkg-share nuturtle_control)/config/control_blue_red.rviz"/>   
 
-   <group if="$(eval '\'$(var use_jsp)\' == \'use_jsp\'')">
-   <node pkg="joint_state_publisher" exec="joint_state_publisher"/>
-   </group>
+<!-- blue launch configuration -->
 
-   <node pkg="robot_state_publisher" exec="robot_state_publisher">
-	   <param name ="robot_description" value="$(command 'xacro $(find-pkg-share turtle_brick)/turtle.urdf.xacro')"/>
-   </node>
-   <node pkg="rviz2" exec="rviz2" name="rviz2" args="-d $(find-pkg-share turtle_brick)/$(var rviz_config)"/>
+<node pkg="rviz2" exec="rviz2" name="rviz2" 
+if="$(eval '\'$(var robot)\' != \'nusim\' and \'$(var robot)\' != \'localhost\' and \'$(var use_rviz)\' == \'true\'')"
+args="-d $(find-pkg-share nuturtle_control)/config/control_blue.rviz"/>
+
+
+<!-- Used chatGPT to debug but wasnt very helpful. the citation are in citation.txt
+Mainly used it for debugging the syntax for and's and or's-->
+
+<node pkg="nuturtle_control" exec="circle" if="$(eval '\'$(var cmd_src)\' == \'circle\'')"/>
+
+<node pkg="turtlesim" exec="turtle_teleop_key" if="$(eval '\'$(var cmd_src)\' == \'teleop\'')"/>
+
+<node pkg="nusim" exec="nusim" if="$(eval '\'$(var robot)\' == \'nusim\'')">
+    <param from="$(find-pkg-share nusim)/config/basic_world.yaml" />
+</node>
+
+<include file = "$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"
+    if="$(eval '\'$(var robot)\' == \'nusim\'')">
+    <arg name="color" value="red"/>
+    <arg name="use_rviz" value="false"/>
+    <arg name="use_jsp" value="true"/>
+</include>
+
+<include file = "$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"
+    if="$(eval '\'$(var robot)\' != \'localhost\'')">
+    <arg name="color" value="blue"/>
+    <arg name="use_rviz" value="false"/>
+    <arg name="use_jsp" value="false"/>
+</include>
+
+<node pkg="nuturtle_control" exec="turtle_control" if="$(eval '\'$(var robot)\' == \'nusim\'')">
+    <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    <remap from="wheel_cmd" to="red/wheel_cmd"/>
+    <remap from="sensor_data" to="red/sensor_data"/>
+    <remap from="joint_states" to="blue/joint_states"/>
+</node>
+
+<node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' == \'nusim\' or \'$(var robot)\' == \'teleop\'')">
+    <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    <param name="body_id" value="blue/base_footprint"/>
+    <param name="odom_id" value="odom"/>
+    <param name="wheel_left" value="wheel_left_joint"/>
+    <param name="wheel_right" value="wheel_right_joint"/>
+    <remap from="joint_states" to="blue/joint_states"/>
+</node>
+
+<node pkg="nuturtle_control" exec="turtle_control" if="$(eval '\'$(var robot)\' == \'localhost\'')">
+    <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    <remap from="joint_states" to="blue/joint_states"/>
+</node>
+
+<node pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
+
+<node pkg="tf2_ros"
+        if="$(eval '\'$(var robot)\' != \'none\'')"
+        exec="static_transform_publisher"
+        args="0 0 0 0 0 0 nusim/world odom"/>
 </launch>
