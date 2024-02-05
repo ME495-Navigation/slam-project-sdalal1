@@ -44,8 +44,12 @@ public:
       std::bind(&Odometry::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
     odom_publisher = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+
+    timer_ = create_wall_timer(
+      1000ms/200, std::bind(&Odometry::timer_callback, this));
   }
 private:
+  rclcpp::TimerBase::SharedPtr timer_;
   std::string body_id;
   std::string odom_id;
   std::string wheel_left;
@@ -56,6 +60,8 @@ private:
   sensor_msgs::msg::JointState old_js, js_pos;
   turtlelib::Transform2D tr{};
   turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
+  turtlelib::Transform2D transformation = diff.get_transformation();
+  tf2::Quaternion q;
   nav_msgs::msg::Odometry odom_pub = nav_msgs::msg::Odometry();
   geometry_msgs::msg::TransformStamped t = geometry_msgs::msg::TransformStamped();
 
@@ -64,12 +70,27 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   rclcpp::Service<nuturtle_control::srv::InitialPose>::SharedPtr srv_initial_pose;
 
+  void timer_callback()
+  {
+    t.header.frame_id = odom_id;
+    t.child_frame_id = body_id;
+    t.header.stamp = this->get_clock()->now();
+    t.transform.translation.x = transformation.translation().x;
+    t.transform.translation.x = transformation.translation().y;
+    q.setRPY(0, 0, transformation.rotation());
+    t.transform.rotation.x = q.x();
+    t.transform.rotation.y = q.y();
+    t.transform.rotation.z = q.z();
+    t.transform.rotation.w = q.w();
+    tf_broadcaster_ -> sendTransform(t);
+  }
+
   void joint_callback(const sensor_msgs::msg::JointState::SharedPtr msg){
     // RCLCPP_INFO_STREAM(this->get_logger(), "in joint callback pose");
     js_pos.position = msg->position;
     // auto js_velo = msg->velocity;
     if(checker){
-      RCLCPP_INFO_STREAM(this->get_logger(), "cchecker_triggered");
+      // RCLCPP_INFO_STREAM(this->get_logger(), "cchecker_triggered");
       auto old_js_left = old_js.position.at(0);
       auto old_js_right = old_js.position.at(1);
       // RCLCPP_INFO_STREAM(this->get_logger(), "old_left"<<old_js_left);
@@ -87,17 +108,17 @@ private:
       // RCLCPP_INFO_STREAM(this->get_logger(), "left delta"<<delta_js_left);
       // RCLCPP_INFO_STREAM(this->get_logger(), "right delta"<<delta_js_right);
 
-      auto transformation = diff.get_transformation();
       // RCLCPP_INFO_STREAM(this->get_logger(), "transformation" << transformation);
       
       odom_pub.header.stamp = this->get_clock()->now();
       odom_pub.header.frame_id = odom_id;
       odom_pub.child_frame_id = body_id;
 
-      tf2::Quaternion q;
-      q.setRPY(0, 0, transformation.rotation());
+      
       odom_pub.pose.pose.position.x = transformation.translation().x;
       odom_pub.pose.pose.position.y = transformation.translation().y;
+
+      q.setRPY(0, 0, transformation.rotation());
 
       odom_pub.pose.pose.orientation.x = q.x();
       odom_pub.pose.pose.orientation.y = q.y(); 
@@ -113,16 +134,7 @@ private:
       
       odom_publisher -> publish(odom_pub);
 
-      t.header.frame_id = odom_id;
-      t.child_frame_id = body_id;
-      t.header.stamp = this->get_clock()->now();
-      t.transform.translation.x = transformation.translation().x;
-      t.transform.translation.x = transformation.translation().y;
-      t.transform.rotation.x = q.x();
-      t.transform.rotation.y = q.y();
-      t.transform.rotation.z = q.z();
-      t.transform.rotation.w = q.w();
-      tf_broadcaster_ -> sendTransform(t);
+      old_js = *msg;
     }
     else{
       checker = true;

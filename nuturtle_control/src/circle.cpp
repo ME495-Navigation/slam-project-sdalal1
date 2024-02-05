@@ -57,6 +57,8 @@ private:
   void timer_callback()
   {
     if(checker){
+    // RCLCPP_INFO_STREAM(this->get_logger(), "in circle timer callback");
+
     cmd_vel_pub -> publish(vel_pub);
     }
   }
@@ -64,11 +66,15 @@ private:
   void control_callback(
     const std::shared_ptr<nuturtle_control::srv::Control::Request> request,
     const std::shared_ptr<nuturtle_control::srv::Control::Response>){
+    RCLCPP_INFO_STREAM(this->get_logger(), "why am I here bfore serv call????");
+    
     checker = true;
     auto lin_velo = request->velocity;
     auto radius = request->radius;
     vel_pub.linear.x = lin_velo;
-    vel_pub.angular.z = lin_velo/radius;
+    // vel_pub.angular.z = lin_velo/radius;
+    vel_pub.angular.z = radius;
+
   }
 
   void reverse_callback(

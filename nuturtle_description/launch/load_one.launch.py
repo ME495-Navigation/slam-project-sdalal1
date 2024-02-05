@@ -53,8 +53,8 @@ def generate_launch_description():
                                         ".rviz"]
             ),
             Node(
-                package="joint_state_publisher",
-                executable="joint_state_publisher",
+                package="joint_state_publisher_gui",
+                executable="joint_state_publisher_gui",
                 namespace=PathJoinSubstitution([LaunchConfiguration("color")]),
                 condition=IfCondition(
                     EqualsSubstitution(LaunchConfiguration("use_jsp"), "true")

@@ -33,7 +33,7 @@ Mainly used it for debugging the syntax for and's and or's-->
     if="$(eval '\'$(var robot)\' == \'nusim\'')">
     <arg name="color" value="red"/>
     <arg name="use_rviz" value="false"/>
-    <arg name="use_jsp" value="true"/>
+    <arg name="use_jsp" value="false"/>
 </include>
 
 <include file = "$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"
