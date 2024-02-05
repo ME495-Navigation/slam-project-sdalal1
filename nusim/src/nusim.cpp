@@ -57,7 +57,7 @@ public:
     declare_parameter("arena_x_length", 5.0);
     declare_parameter("arena_y_length", 10.0);
 
-    auto rate = get_parameter("rate").as_double();
+    auto rate = get_parameter("rate").as_double(); // const auto rate
     x0 = get_parameter("x0").as_double();
     y0 = get_parameter("y0").as_double();
     theta0 = get_parameter("theta0").as_double();
@@ -135,9 +135,9 @@ private:
         cyl.scale.x = obs_r * 2;
         cyl.scale.y = obs_r * 2;
         cyl.scale.z = 0.25;
-        cyl.pose.position.x = obs_x[i];
-        cyl.pose.position.y = obs_y[i];
-        cyl.pose.position.z = 0.25 / 2;
+        cyl.pose.position.x = obs_x[i]; // .at()
+        cyl.pose.position.y = obs_y[i]; // .at()
+        cyl.pose.position.z = 0.25 / 2; // / 2.0
         cyl.color.r = 1.0;
         cyl.color.g = 0.0;
         cyl.color.b = 0.0;
@@ -151,6 +151,7 @@ private:
         get_logger(),
         "The size of x and y are not equal," << "size of x" << obs_x.size() << ",size of y" <<
           obs_y.size());
+      // need to throw an exception
     }
   }
 

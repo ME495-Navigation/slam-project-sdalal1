@@ -14,24 +14,25 @@ namespace turtlelib{
             is.putback(c1);
             is >>tw.omega >> tw.x >> tw.y;
         }
+        // does not eat trailing
         return is;
     }
-    Transform2D::Transform2D(){
+    Transform2D::Transform2D(){// initializer lists
         t.x = 0.0;
         t.y = 0.0;
         ang=0.0;
     }
-    Transform2D::Transform2D(Vector2D trans){
+    Transform2D::Transform2D(Vector2D trans){ // initializer lists
         t.x = trans.x;
         t.y = trans.y;
         ang=0.0;
     }
-    Transform2D::Transform2D(double radians){
+    Transform2D::Transform2D(double radians){ // initializer lists
         t.x = 0.0;
         t.y = 0.0;
         ang=radians;
     }
-    Transform2D::Transform2D(Vector2D trans, double radians){
+    Transform2D::Transform2D(Vector2D trans, double radians){ // initializer lists
         t.x = trans.x;
         t.y = trans.y;
         ang=radians;
@@ -39,21 +40,21 @@ namespace turtlelib{
     Point2D Transform2D::operator()(Point2D p) const{
         Point2D pt;
         pt.x=(p.x*cos(ang))-(p.y*sin(ang))+t.x;
-        pt.y=(p.y*cos(ang))+(p.x*sin(ang))+t.y;
+        pt.y=(p.y*cos(ang))+(p.x*sin(ang))+t.y; // return {x, y} no need for temporary
         return pt;
     }
     Vector2D Transform2D::operator()(Vector2D v) const{
         Vector2D vec;
         vec.x=(v.x*cos(ang))-(v.y*sin(ang));
         vec.y=(v.y*cos(ang))+(v.x*sin(ang));
-        return vec;
+        return vec; // return {}
     }
     Twist2D Transform2D::operator()(Twist2D v) const{
         Twist2D tw;
         tw.omega = v.omega;
         tw.x = (v.x*cos(ang))-(v.y*sin(ang))+(v.omega*t.y);
         tw.y = (v.x*sin(ang))+(v.y*cos(ang))-(v.omega*t.x);
-        return Twist2D{tw.omega,tw.x,tw.y};
+        return Twist2D{tw.omega,tw.x,tw.y}; // No need for Twist2D 
     }
     Transform2D Transform2D::inv() const{
         Transform2D i;
@@ -83,13 +84,13 @@ namespace turtlelib{
     }
 
     std::istream & operator>>(std::istream & is, Transform2D & tf){
-        char c1 = is.get();
+        char c1 = is.get(); // const auto
         std::string c3 ,c4, c5;
-        double deg ;
+        double deg ; // unitiialized variable
         Vector2D v ;
 
         if (c1 == 'd'){
-
+            // the pattern is similar to toher input functions
             is>>c3>>deg>>c4>>v.x>>c5>>v.y; ///NOTE: Not right. Need to work on this.
         }
         else{

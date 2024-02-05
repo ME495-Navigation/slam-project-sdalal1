@@ -32,7 +32,7 @@ namespace turtlelib{
         /// \param stroke_color the stroke color of the point
         /// \param fill_color the fill color of the point
         /// \returns nothing
-        void draw_point(std::ofstream &svgFile, Point2D &p, const std::string &stroke_color, const std::string fill_color);
+        void draw_point(std::ofstream &svgFile, Point2D &p, const std::string &stroke_color, const std::string fill_color); // & fill_color
         
         /// \brief creates vector component wrt to the center of the screen
         /// \param svgFile the file stream to open and edit the file
@@ -55,7 +55,7 @@ namespace turtlelib{
         /// \brief closes the svg file with the tag
         /// \param svgFile the file stream to open and edit the file
         /// \returns nothing
-        void closeSVGFile(std::ofstream &svgFile);
+        void closeSVGFile(std::ofstream &svgFile); // is the file in a valid state after this is called?
         
         /// \brief Creates a string
         /// \param filename to open the right file

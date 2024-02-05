@@ -1,0 +1,3 @@
+doxygen warnings when compiling
+some tests fail
+eigen not being used but it reamins in your turtlelib cmake

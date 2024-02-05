@@ -4,6 +4,7 @@
 
 namespace turtlelib
 {
+    // do not use global variables. these should be static const or constexpr
     Point2D center{408.00,528.00};
     double scale {96.0};
     void Svg::openSVGFile(std::ofstream &svgFile, const std::string &filename){
@@ -40,7 +41,7 @@ namespace turtlelib
     void Svg::draw_frame(std::ofstream &svgFile, Point2D &origin, double &angle,  const std::string &stroke_color_x,  const std::string &stroke_color_y, const std::string &frame_coord){
         origin.x = center.x+(origin.x*scale);
         origin.y = center.y-(origin.y*scale);
-        Point2D xaxis;
+        Point2D xaxis; // initialize in constructor
         Point2D yaxis;
 
         xaxis.x = origin.x +(cos(angle)*scale);

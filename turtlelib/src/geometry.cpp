@@ -1,15 +1,15 @@
 #include "turtlelib/geometry2d.hpp"
 #include <iostream>
 
-// #define PI 3.14159265358979323846
+// #define PI 3.14159265358979323846 DO Not leave in commented out code
 namespace turtlelib
 {
 double normalize_angle(double rad){
     while(rad < -PI){
-        rad += 2*PI;
+        rad += 2*PI; //2.0
     }
     while(rad > PI){
-        rad-=2*PI;
+        rad-=2*PI; //2.0
     } 
     return rad;
 }
@@ -20,7 +20,7 @@ std::ostream & operator<<(std::ostream & os, const turtlelib::Point2D & p){
 }
 
 std::istream & operator>>(std::istream & is, turtlelib::Point2D & p){
-    char c1 = is.get();
+    char c1 = is.get(); // const auto
     if (c1 == '['){
         is >> p.x >> p.y >> c1;
     }
@@ -28,11 +28,12 @@ std::istream & operator>>(std::istream & is, turtlelib::Point2D & p){
         is.putback(c1);
         is >> p.x >> p.y;
     }
+    // does not eat the trailing ']'
     return is;
 }
 
 Vector2D normalize(Vector2D v){
-        double dim = std::sqrt(pow(v.x,2) + pow(v.y,2));
+    double dim = std::sqrt(pow(v.x,2) + pow(v.y,2)); // const auto
         return {v.x/dim, v.y/dim};
 }
 
@@ -40,14 +41,14 @@ Vector2D operator-(const Point2D & head, const Point2D & tail){
     Vector2D coord;
     coord.x = head.x - tail.x;
     coord.y = head.y - tail.y;
-    return coord;
+    return coord; // return {head.x - tail.x, head.y -tail.y}
 }
 
 Point2D operator+(const Point2D & tail, const Vector2D & disp){
     Point2D disp_point;
     disp_point.x = disp.x+tail.x;
     disp_point.y = disp.y+tail.y;
-    return disp_point;
+    return disp_point; // return {...} no need for temporary
 }
 
 std::ostream & operator<<(std::ostream & os, const Vector2D & v){
@@ -63,6 +64,7 @@ std::istream & operator>>(std::istream & is, Vector2D & v){
         is.putback(c1);
         is >> v.x >> v.y;
     }
+    // does not eat the trailing ]
     return is;
 }
 
