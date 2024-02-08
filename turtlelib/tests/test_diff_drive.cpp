@@ -101,14 +101,26 @@ namespace turtlelib{
         REQUIRE_THAT(dif.get_transformation().rotation(), 
             Catch::Matchers::WithinAbs(1.57, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().x, 
-            Catch::Matchers::WithinAbs(0.2, 1e-5));
+            Catch::Matchers::WithinAbs(0.1273884946, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().y, 
-            Catch::Matchers::WithinAbs(0.2, 1e-5)); 
+            Catch::Matchers::WithinAbs(0.1272870921, 1e-5)); 
     }
 
     TEST_CASE("rotation motion exception", "[exception]"){
         auto dif = DiffDrive(1.3, 0.5);
         CHECK_THROWS(dif.compute_ik(Twist2D{1.57, 0.2 , 1.2}));
+    }
+
+    TEST_CASE("changing trans", "[change_transform]"){
+        auto dif = DiffDrive(1.3,0.5);
+        Transform2D tr{Vector2D{1.0,2.0}, 1.57};
+        dif.change_transform(tr);
+        REQUIRE_THAT(dif.get_transformation().rotation(), 
+            Catch::Matchers::WithinAbs(1.57, 1e-5));
+        REQUIRE_THAT(dif.get_transformation().translation().x, 
+            Catch::Matchers::WithinAbs(1.0, 1e-5));
+        REQUIRE_THAT(dif.get_transformation().translation().y, 
+            Catch::Matchers::WithinAbs(2.0, 1e-5));
     }
 
 }

@@ -104,7 +104,7 @@ public:
       10);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     ground_frame_loc(x0, y0, theta0);
-    tr = {turtlelib::Vector2D{x0,y0}, theta0};
+    tr = {turtlelib::Vector2D{x0,y0} , theta0};
     diff = std::make_unique<turtlelib::DiffDrive>(tr, track_width_, wheel_radius_);
     publish_walls();
     publish_obs();
@@ -151,7 +151,6 @@ private:
 
   turtlelib::Transform2D tr;
   std::unique_ptr<turtlelib::DiffDrive> diff;
-  // turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
 
   nuturtlebot_msgs::msg::WheelCommands old_wheels, new_wheels;
 
@@ -288,15 +287,13 @@ private:
   /// \brief Creates a timer to publish frames and timestep
   void timer_callback()
   {
-    RCLCPP_ERROR_STREAM(this->get_logger(),"x0"<<tr.translation().x);
+    // RCLCPP_ERROR_STREAM(this->get_logger(),"x0"<<tr.translation().x);
     auto time_msg = std_msgs::msg::UInt64();
     count_++;
     time_msg.data = count_;
     publisher_timestep->publish(time_msg);
 
     red_sensor.stamp = this->get_clock()->now();
-    // red_sensor.left_encoder = new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate;
-    // red_sensor.right_encoder = new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate;
     red_sensor.left_encoder = left_wheel;
     red_sensor.right_encoder = right_wheel;
 
@@ -327,6 +324,8 @@ private:
     RCLCPP_INFO_STREAM(get_logger(), "resetting all variables" << x0 << y0 << theta0);
   }
 
+  /// \brief Callback function for wheel velocity
+  /// \param the message to get published wheel commands
   void red_wheel_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg)
   {
     new_wheels.left_velocity = msg->left_velocity;

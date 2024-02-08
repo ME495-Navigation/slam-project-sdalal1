@@ -39,10 +39,13 @@ Twist2D DiffDrive::get_twist() const{
     return twist;
 }
 
+void DiffDrive::change_transform(Transform2D tr){
+    trans = tr;
+}
+
 void DiffDrive::compute_fk(double l_prime, double r_prime)
 {
     auto phi = (wheel_radius/wheel_track) * (r_prime - l_prime);
-    // auto x_dot = (wheel_radius/2) * cos(trans.rotation()) * (l_prime+r_prime);
     auto x_dot = (wheel_radius/2) * (l_prime+r_prime);
     
     auto y_dot = 0.0;
@@ -53,21 +56,10 @@ void DiffDrive::compute_fk(double l_prime, double r_prime)
     twist.omega = phi;
     twist.x = x_dot;
     twist.y = y_dot;
-    // auto new_phi = trans.rotation() + phi ;
-    // auto new_x = trans.translation().x + x_dot ; 
-    // auto new_y = trans.translation().y + y_dot ;
-    
-    // auto t_new = turtlelib::Transform2D(Vector2D{new_x, new_y}, new_phi);
+
     auto t_new = integrate_twist(twist);
 
-    // trans = t_new;
     trans *= t_new;
-
-    // twist.omega = new_phi;
-    // twist.x = new_x;
-    // twist.y = new_y;
-
-    // trans = turtlelib::integrate_twist(twist);
 }
 
 wheel_positions DiffDrive::compute_ik(Twist2D twi){

@@ -1,3 +1,5 @@
+
+
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -15,6 +17,7 @@
 
 using namespace std::chrono_literals;
 
+/// \brief  Odometry node implements the main turtlebot functionality using DiffDrive class.
 class Odometry : public rclcpp::Node
 {
 public:
@@ -23,10 +26,10 @@ public:
   {
     declare_parameter("wheel_radius", 0.033);
     declare_parameter("track_width", 0.16);
-    declare_parameter("body_id", "base_footprint");
+    declare_parameter("body_id", " ");
     declare_parameter("odom_id", "odom");
-    declare_parameter("wheel_left", "left_wheel");
-    declare_parameter("wheel_right", "right_right");
+    declare_parameter("wheel_left", " ");
+    declare_parameter("wheel_right", " ");
 
     wheel_radius_ = get_parameter("wheel_radius").as_double();
     track_width_ = get_parameter("track_width").as_double();
@@ -34,6 +37,16 @@ public:
     odom_id = get_parameter("odom_id").as_string();
     wheel_left = get_parameter("wheel_left").as_string();
     wheel_right = get_parameter("wheel_right").as_string();
+
+    if(body_id == " " || wheel_left == " " || wheel_right ==" " || wheel_radius_ == 0.0 || track_width_ ==0.0){
+      RCLCPP_ERROR_STREAM(this->get_logger(), "a paramter not defined not defined");
+      RCLCPP_ERROR_STREAM(this->get_logger(), "body_id: "<<body_id);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "wheel_left: "<<wheel_left);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Wheel_right: "<<wheel_right);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "wheel_radius: "<<wheel_radius_);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "track_width: "<<track_width_);
+      throw std::runtime_error("runtime_error_exception");
+    }
 
     RCLCPP_INFO_STREAM(this->get_logger(), "body_id"<<body_id);
     joint_subscription = create_subscription<sensor_msgs::msg::JointState>(
@@ -47,19 +60,23 @@ public:
 
     timer_ = create_wall_timer(
       1000ms/200, std::bind(&Odometry::timer_callback, this));
+
+    tr = {};
+    diff = std::make_unique<turtlelib::DiffDrive>(tr, track_width_, wheel_radius_);
+    
   }
 private:
   rclcpp::TimerBase::SharedPtr timer_;
-  std::string body_id;
-  std::string odom_id;
-  std::string wheel_left;
-  std::string wheel_right;
-  double wheel_radius_ = 0.033;
-  double track_width_ = 0.16;
+  std::string body_id = " ";
+  std::string odom_id = " ";
+  std::string wheel_left = " ";
+  std::string wheel_right = " ";
+  double wheel_radius_ = 0.0;
+  double track_width_ = 0.0;
   bool checker = false;
   sensor_msgs::msg::JointState old_js, js_pos;
-  turtlelib::Transform2D tr{};
-  turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
+  turtlelib::Transform2D tr;
+  std::unique_ptr<turtlelib::DiffDrive> diff;
   turtlelib::Transform2D transformation;
   tf2::Quaternion q;
   nav_msgs::msg::Odometry odom_pub = nav_msgs::msg::Odometry();
@@ -70,6 +87,7 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   rclcpp::Service<nuturtle_control::srv::InitialPose>::SharedPtr srv_initial_pose;
 
+  /// \brief timer callbacck publishing transforms and odometry
   void timer_callback()
   {
     
@@ -77,10 +95,12 @@ private:
     odom_publisher -> publish(odom_pub);
   }
 
+  /// \brief  callback function for the joint state subscription
+  /// \param msg The Joint State message from the topic /joint_states
   void joint_callback(const sensor_msgs::msg::JointState::SharedPtr msg){
     // RCLCPP_INFO_STREAM(this->get_logger(), "in joint callback pose");
     js_pos.position = msg->position;
-    // auto js_velo = msg->velocity;
+
     if(checker){
       // RCLCPP_INFO_STREAM(this->get_logger(), "cchecker_triggered");
       auto old_js_left = old_js.position.at(0);
@@ -96,12 +116,12 @@ private:
       auto delta_js_left = pos_left - old_js_left;
       auto delta_js_right = pos_right - old_js_right;
 
-      diff.compute_fk(delta_js_left, delta_js_right);
+      diff->compute_fk(delta_js_left, delta_js_right);
       // RCLCPP_INFO_STREAM(this->get_logger(), "left delta"<<delta_js_left);
       // RCLCPP_INFO_STREAM(this->get_logger(), "right delta"<<delta_js_right);
 
       // RCLCPP_INFO_STREAM(this->get_logger(), "transformation" << transformation);
-      transformation  = diff.get_transformation();
+      transformation  = diff->get_transformation();
 
       odom_pub.header.stamp = this->get_clock()->now();
       odom_pub.header.frame_id = odom_id;
@@ -117,12 +137,12 @@ private:
       odom_pub.pose.pose.orientation.z = q.z(); 
       odom_pub.pose.pose.orientation.w = q.w(); 
 
-      odom_pub.twist.twist.linear.x = diff.get_twist().x;
-      odom_pub.twist.twist.linear.y = diff.get_twist().y;
+      odom_pub.twist.twist.linear.x = diff->get_twist().x;
+      odom_pub.twist.twist.linear.y = diff->get_twist().y;
       odom_pub.twist.twist.linear.z = 0.0;
       odom_pub.twist.twist.angular.x = 0.0;
       odom_pub.twist.twist.angular.y = 0.0;
-      odom_pub.twist.twist.angular.z = diff.get_twist().omega;
+      odom_pub.twist.twist.angular.z = diff->get_twist().omega;
       
 
       t.header.frame_id = odom_id;
@@ -141,11 +161,13 @@ private:
     }
     else{
       checker = true;
-      RCLCPP_INFO_STREAM(this->get_logger(), "checker set to true");
-
+      // RCLCPP_INFO_STREAM(this->get_logger(), "checker set to true");
       old_js = *msg;
     }
     };
+
+  /// \brief Call back for initial pose service
+  /// \param req Inital pose request from srv
   void initial_pose_callback(
     const std::shared_ptr<nuturtle_control::srv::InitialPose::Request> request,
     const std::shared_ptr<nuturtle_control::srv::InitialPose::Response>){
@@ -153,17 +175,12 @@ private:
       double x_pos = request->x;
       double y_pos = request->y;
       auto theta_pos = request->theta;
-      // checker = false;
 
       turtlelib::Transform2D trans{turtlelib::Vector2D{x_pos,y_pos}, theta_pos};
       turtlelib::DiffDrive new_diff{trans,track_width_, wheel_radius_};
-      diff = new_diff;
-      // checker=true;
+      diff->change_transform(trans);
   };
 };
-
-
-
 
 /// \brief The main function to spin the node
 int main(int argc, char * argv[])

@@ -143,8 +143,8 @@ while (
     // std::cout<<t.transform.translation.y<<std::endl;
   }
 
-  CHECK_THAT(t.transform.translation.x, Catch::Matchers::WithinAbs(-0.0016955391, 1e-5));
-  CHECK_THAT(t.transform.translation.y, Catch::Matchers::WithinAbs(0.0, 1e-5));
+  CHECK_THAT(t.transform.translation.x, Catch::Matchers::WithinAbs(0.0163832661, 1e-5));
+  CHECK_THAT(t.transform.translation.y, Catch::Matchers::WithinAbs(-0.0016955391, 1e-5));
   CHECK_THAT(t.transform.rotation.z, Catch::Matchers::WithinAbs(-0.1029423121, 1e-5));
   CHECK_THAT(t.transform.rotation.w, Catch::Matchers::WithinAbs(0.9946873279, 1e-5));
 }

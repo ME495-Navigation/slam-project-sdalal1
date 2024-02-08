@@ -61,6 +61,10 @@ namespace turtlelib
         /// @param right_prime The right wheel orientation after time delta t
         void compute_fk(double left_prime, double right_prime);
 
+        /// @brief change the orienataion of the object
+        /// @param tr the new transform
+        void change_transform(Transform2D tr);
+
         /// @brief Computing the inverse kinematiocs of the bot
         /// @param twi The twist to be achieved
         /// @return The wheel velocities of bot
