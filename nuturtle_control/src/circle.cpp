@@ -73,7 +73,7 @@ private:
     auto radius = request->radius;
     vel_pub.linear.x = lin_velo;
     // vel_pub.angular.z = lin_velo/radius;
-    vel_pub.angular.z = radius;
+    vel_pub.angular.z = lin_velo / radius;
 
   }
 
@@ -98,7 +98,7 @@ private:
   }
 };
 
-/// \brief The main function to spin the node
+///\brief The main function to spin the node
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);

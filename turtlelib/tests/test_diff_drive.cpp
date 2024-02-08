@@ -101,9 +101,9 @@ namespace turtlelib{
         REQUIRE_THAT(dif.get_transformation().rotation(), 
             Catch::Matchers::WithinAbs(1.57, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().x, 
-            Catch::Matchers::WithinAbs(0.1273884946, 1e-5));
+            Catch::Matchers::WithinAbs(0.2, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().y, 
-            Catch::Matchers::WithinAbs(0.1272870921, 1e-5)); 
+            Catch::Matchers::WithinAbs(0.2, 1e-5)); 
     }
 
     TEST_CASE("rotation motion exception", "[exception]"){

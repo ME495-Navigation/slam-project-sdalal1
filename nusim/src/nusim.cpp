@@ -98,11 +98,9 @@ public:
 
     red_wheel_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
       "red/wheel_cmd", 10, std::bind(&Nusim::red_wheel_callback, this, std::placeholders::_1));
-    
     sensor_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>(
       "red/sensor_data",
       10);
-    
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     ground_frame_loc(x0, y0, theta0);
     publish_walls();
@@ -116,7 +114,6 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_walls;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_obs;
   rclcpp::TimerBase::SharedPtr timer_;
-  
   // C.7 sub
   rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr red_wheel_sub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_pub;
@@ -150,7 +147,7 @@ private:
 
   turtlelib::Transform2D tr{};
   turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
-  bool checker = false;
+  // bool checker = false;
 
   nuturtlebot_msgs::msg::WheelCommands old_wheels, new_wheels;
 
@@ -293,13 +290,14 @@ private:
     publisher_timestep->publish(time_msg);
 
     red_sensor.stamp = this->get_clock()->now();
-
+    red_sensor.left_encoder = new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate;
+    red_sensor.right_encoder = new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate;
 
     t.header.stamp = this->get_clock()->now();
 
     tf_broadcaster_->sendTransform(t);
 
-    sensor_pub -> publish(red_sensor);
+    sensor_pub->publish(red_sensor);
   }
 
   /// \brief The service to teleport the bot in rviz
@@ -321,23 +319,16 @@ private:
     RCLCPP_INFO_STREAM(get_logger(), "resetting all variables" << x0 << y0 << theta0);
   }
 
-  void red_wheel_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg ){
-    // left_wheel = msg->left_velocity;
-    // right_wheel = msg->right_velocity;
+  void red_wheel_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg)
+  {
+    new_wheels.left_velocity = msg->left_velocity;
+    new_wheels.right_velocity = msg->right_velocity;
 
-    // if (checker){
-      new_wheels.left_velocity = msg->left_velocity;
-      new_wheels.right_velocity = msg->right_velocity;
-
-      // red_sensor.left_encoder = new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate;
-      // red_sensor.right_encoder = new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate;
-
-      red_sensor.left_encoder = new_wheels.left_velocity;
-      red_sensor.right_encoder = new_wheels.right_velocity;
-
-      diff.compute_fk(new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate,new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate);
-      auto trans_red = diff.get_transformation();
-      ground_frame_loc(trans_red.translation().x, trans_red.translation().y, trans_red.rotation());
+    diff.compute_fk(
+      new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate,
+      new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate);
+    auto trans_red = diff.get_transformation();
+    ground_frame_loc(trans_red.translation().x, trans_red.translation().y, trans_red.rotation());
   }
 
   size_t count_{0};

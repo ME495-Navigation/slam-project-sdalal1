@@ -86,7 +86,7 @@ private:
     auto ly = msg->linear.y;
     turtlelib::DiffDrive diff(track_width_, wheel_radius_);
     turtlelib::Twist2D twist{a, lx, ly};
-    auto wheel_angle =  diff.compute_ik(twist);
+    const auto wheel_angle =  diff.compute_ik(twist);
     auto pub_wheel = nuturtlebot_msgs::msg::WheelCommands();
     pub_wheel.left_velocity = wheel_angle.left / motor_cmd_per_rad_sec_;
     pub_wheel.right_velocity = wheel_angle.right / motor_cmd_per_rad_sec_;
