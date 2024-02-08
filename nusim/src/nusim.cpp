@@ -40,6 +40,7 @@
 #include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 #include "turtlelib/diff_drive.hpp"
+#include "turtlelib/geometry2d.hpp"
 
 using namespace std::chrono_literals;
 
@@ -103,6 +104,8 @@ public:
       10);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     ground_frame_loc(x0, y0, theta0);
+    tr = {turtlelib::Vector2D{x0,y0}, theta0};
+    diff = std::make_unique<turtlelib::DiffDrive>(tr, track_width_, wheel_radius_);
     publish_walls();
     publish_obs();
   }
@@ -139,15 +142,16 @@ private:
   std::vector<double> obs_x = {2.0, 3.2, 4.2};
   std::vector<double> obs_y = {3.0, 5.2, 2.1};
 
-  double left_wheel, right_wheel;
+  double left_wheel = 0.0;
+  double right_wheel = 0.0;
   nuturtlebot_msgs::msg::SensorData red_sensor;
   double motor_cmd_per_rad_sec_ = 0.0;
   double wheel_radius_ = 0.033;
   double track_width_ = 0.16;
 
-  turtlelib::Transform2D tr{};
-  turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
-  // bool checker = false;
+  turtlelib::Transform2D tr;
+  std::unique_ptr<turtlelib::DiffDrive> diff;
+  // turtlelib::DiffDrive diff{tr, track_width_, wheel_radius_};
 
   nuturtlebot_msgs::msg::WheelCommands old_wheels, new_wheels;
 
@@ -284,14 +288,18 @@ private:
   /// \brief Creates a timer to publish frames and timestep
   void timer_callback()
   {
+    RCLCPP_ERROR_STREAM(this->get_logger(),"x0"<<tr.translation().x);
     auto time_msg = std_msgs::msg::UInt64();
     count_++;
     time_msg.data = count_;
     publisher_timestep->publish(time_msg);
 
     red_sensor.stamp = this->get_clock()->now();
-    red_sensor.left_encoder = new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate;
-    red_sensor.right_encoder = new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate;
+    // red_sensor.left_encoder = new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate;
+    // red_sensor.right_encoder = new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate;
+    red_sensor.left_encoder = left_wheel;
+    red_sensor.right_encoder = right_wheel;
+
 
     t.header.stamp = this->get_clock()->now();
 
@@ -324,10 +332,13 @@ private:
     new_wheels.left_velocity = msg->left_velocity;
     new_wheels.right_velocity = msg->right_velocity;
 
-    diff.compute_fk(
+    left_wheel +=new_wheels.left_velocity *motor_cmd_per_rad_sec_/rate * 652.229299363;
+    right_wheel +=new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate * 652.229299363;
+
+    diff->compute_fk(
       new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate,
       new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate);
-    auto trans_red = diff.get_transformation();
+    auto trans_red = diff->get_transformation();
     ground_frame_loc(trans_red.translation().x, trans_red.translation().y, trans_red.rotation());
   }
 

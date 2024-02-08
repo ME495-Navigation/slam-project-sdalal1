@@ -18,7 +18,7 @@ find_package(nuturtlebot_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(catch_ros2 REQUIRED)
+
 
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -43,36 +43,19 @@ add_executable(circle src/circle.cpp)
 ament_target_dependencies(circle turtlelib rclcpp std_srvs geometry_msgs)
 target_link_libraries(circle turtlelib::turtlelib "${cpp_typesupport_target}")
 
-add_executable(turtle_control_test test/turtle_control_test.cpp)
-ament_target_dependencies(turtle_control_test rclcpp geometry_msgs nuturtlebot_msgs sensor_msgs)
-target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
-
-add_executable(turtle_odom_test test/turtle_odom_test.cpp)
-ament_target_dependencies(turtle_odom_test turtlelib rclcpp std_srvs geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros)
-target_link_libraries(turtle_odom_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
-
-
 install(TARGETS
   turtle_control
   odometry
   circle
-  turtle_control_test
-  turtle_odom_test
   DESTINATION lib/${PROJECT_NAME})
 
-install(FILES
-test/turtle_control_test.launch.xml
-test/turtle_odom_test.launch.xml
-DESTINATION share/${PROJECT_NAME}
-)
+# install(FILES
+# test/turtle_control_test.launch.xml
+# test/turtle_odom_test.launch.xml
+# DESTINATION share/${PROJECT_NAME}
+# )
 
-catch_ros2_add_integration_test(test_1
-  LAUNCH_FILE turtle_control_test.launch.xml 
-)
 
-catch_ros2_add_integration_test(test_2
-  LAUNCH_FILE turtle_odom_test.launch.xml 
-)
 find_package(Doxygen)
 
 # Building documentation should be optional.
@@ -92,6 +75,27 @@ if(${DOXYGEN_FOUND} AND ${BUILD_DOCS})
 endif()
 
 if(BUILD_TESTING)
+  include(CTest)
+  find_package(catch_ros2 REQUIRED)
+
+  add_executable(turtle_control_test test/turtle_control_test.cpp)
+  ament_target_dependencies(turtle_control_test rclcpp geometry_msgs nuturtlebot_msgs sensor_msgs)
+  target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
+
+  add_executable(turtle_odom_test test/turtle_odom_test.cpp)
+  ament_target_dependencies(turtle_odom_test turtlelib rclcpp std_srvs geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros)
+  target_link_libraries(turtle_odom_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
+
+  install(TARGETS
+  turtle_control_test
+  turtle_odom_test
+  DESTINATION lib/${PROJECT_NAME})
+
+  install(FILES
+  test/turtle_control_test.launch.xml
+  test/turtle_odom_test.launch.xml
+  DESTINATION share/${PROJECT_NAME}
+  )
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
   # comment the line when a copyright and license is added to all source files
@@ -101,10 +105,19 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
+  
+  catch_ros2_add_integration_test(test_1
+  LAUNCH_FILE turtle_control_test.launch.xml 
+  )
+
+  catch_ros2_add_integration_test(test_2
+  LAUNCH_FILE turtle_odom_test.launch.xml 
+  )
 endif()
 
 install(DIRECTORY src srv launch config
   DESTINATION share/${PROJECT_NAME}/
 )
+
 
 ament_package()

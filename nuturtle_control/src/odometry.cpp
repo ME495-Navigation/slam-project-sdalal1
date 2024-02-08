@@ -85,8 +85,8 @@ private:
       // RCLCPP_INFO_STREAM(this->get_logger(), "cchecker_triggered");
       auto old_js_left = old_js.position.at(0);
       auto old_js_right = old_js.position.at(1);
-      RCLCPP_INFO_STREAM(this->get_logger(), "old_left"<<old_js_left);
-      RCLCPP_INFO_STREAM(this->get_logger(), "old_right"<<old_js_right);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "old_left"<<old_js_left);
+      // RCLCPP_INFO_STREAM(this->get_logger(), "old_right"<<old_js_right);
 
       auto pos_left = js_pos.position.at(0);
       auto pos_right = js_pos.position.at(1);
@@ -129,7 +129,7 @@ private:
       t.child_frame_id = body_id;
       t.header.stamp = this->get_clock()->now();
       t.transform.translation.x = transformation.translation().x;
-      t.transform.translation.x = transformation.translation().y;
+      t.transform.translation.y = transformation.translation().y;
       q.setRPY(0, 0, transformation.rotation());
       t.transform.rotation.x = q.x();
       t.transform.rotation.y = q.y();
@@ -141,6 +141,8 @@ private:
     }
     else{
       checker = true;
+      RCLCPP_INFO_STREAM(this->get_logger(), "checker set to true");
+
       old_js = *msg;
     }
     };

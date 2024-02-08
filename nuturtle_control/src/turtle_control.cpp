@@ -91,14 +91,21 @@ private:
     pub_wheel.left_velocity = wheel_angle.left / motor_cmd_per_rad_sec_;
     pub_wheel.right_velocity = wheel_angle.right / motor_cmd_per_rad_sec_;
 
-    if (pub_wheel.left_velocity > motor_cmd_max_ || pub_wheel.right_velocity > motor_cmd_max_){
+    if (pub_wheel.left_velocity > motor_cmd_max_){
       pub_wheel.left_velocity = motor_cmd_max_;
+    }
+    if (pub_wheel.right_velocity > motor_cmd_max_ ){
       pub_wheel.right_velocity = motor_cmd_max_;
     }
-    else if(pub_wheel.left_velocity < -motor_cmd_max_ || pub_wheel.right_velocity < -motor_cmd_max_){
+    if(pub_wheel.left_velocity < -motor_cmd_max_){
       pub_wheel.left_velocity = -motor_cmd_max_;
+    }
+    if(pub_wheel.right_velocity < -motor_cmd_max_){
       pub_wheel.right_velocity = -motor_cmd_max_;
     }
+    RCLCPP_INFO_STREAM(this->get_logger(), "left_velocity" << pub_wheel.left_velocity);
+    RCLCPP_INFO_STREAM(this->get_logger(), "right_velo" << pub_wheel.right_velocity);
+
     velo_publish -> publish(pub_wheel);
   };
 
@@ -113,6 +120,9 @@ private:
     js_pub.name ={"wheel_left_joint","wheel_right_joint"};
     auto left_joint = (left_en)/encoder_ticks_per_rad_;
     auto right_joint = (right_en)/encoder_ticks_per_rad_;
+
+    // auto left_joint = (left_en)*encoder_ticks_per_rad_;
+    // auto right_joint = (right_en)*encoder_ticks_per_rad_;
 
     js_pub.position = std::vector<double>(2);
     js_pub.position.at(0) = left_joint;
@@ -140,6 +150,9 @@ private:
     js_pub.velocity = std::vector<double>(2);
     js_pub.velocity.at(0) = (left_en - old_left_en)/(dt * encoder_ticks_per_rad_);
     js_pub.velocity.at(1) = (right_en - old_right_en)/(dt * encoder_ticks_per_rad_);
+
+    // js_pub.velocity.at(0) = (left_en - old_left_en)/(dt / encoder_ticks_per_rad_);
+    // js_pub.velocity.at(1) = (right_en - old_right_en)/(dt / encoder_ticks_per_rad_);
 
     // RCLCPP_INFO_STREAM(this->get_logger(), "left_ velo _ pub"<<js_pub.velocity.at(0));
     // RCLCPP_INFO_STREAM(this->get_logger(), "right _ velo_pub "<<js_pub.velocity.at(1));
