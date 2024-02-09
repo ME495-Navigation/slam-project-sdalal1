@@ -43,7 +43,7 @@ The  `use_rviz` options are:
 4. If you want to visualize on the host, you ca run `ros2 launch cmd_src:=none robot:=none use_rviz=true` to launch the rviz with blue robot.
 5. From the host, run `ros2 service call /control nuturtle_control/srv/Control "{velocity: 0.1, radius: 0.5}` and watch the robot create circles on the ground. 
 
-The video is as follows:
+The video below shows the movent of robot in a circle, using the `control`, `reverse` and `stop` sevices. To make the robot reach the exact start posiotn `teleop_twist_keyboard` is used:
 
 [!CIRCLE](https://github.com/ME495-Navigation/slam-project-sdalal1/assets/80363654/478255eb-6318-4356-bef3-168067404fe9)
 
