@@ -88,10 +88,10 @@ private:
     RCLCPP_INFO_STREAM(this->get_logger(), "Starting cmd vel publishing");
 
     checker = true;
-    auto lin_velo = request->velocity;
+    auto velo = request->velocity;
     auto radius = request->radius;
-    vel_pub.linear.x = lin_velo;
-    vel_pub.angular.z = lin_velo / radius;
+    vel_pub.linear.x = velo*radius;
+    vel_pub.angular.z = velo;
 
   }
 
