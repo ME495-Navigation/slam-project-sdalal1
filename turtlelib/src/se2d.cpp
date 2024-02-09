@@ -80,6 +80,7 @@ namespace turtlelib{
     }
 
     Transform2D integrate_twist(Twist2D twi){
+        //Entire calculation in docs/kinematics.pdf for reference
         auto w = twi.omega;
         auto x = twi.x;
         auto y = twi.y;
@@ -92,10 +93,11 @@ namespace turtlelib{
             Transform2D Tsb(Vector2D{y/w,-x/w});
             Transform2D Tssprime(w);
             Transform2D Tsprimebprime(Vector2D{y/w,-x/w});
+            //Using formula 7 in kinematics.pdf Begin
             auto Tbs = Tsb.inv();
             auto Tbsprime = Tbs * Tssprime;
             auto Tbbprime = Tbsprime * Tsprimebprime;
-            return Tbbprime;
+            return Tbbprime; 
         }
     }
 

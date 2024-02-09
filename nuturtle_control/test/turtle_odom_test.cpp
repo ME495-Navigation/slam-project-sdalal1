@@ -76,15 +76,17 @@ TEST_CASE("service test for initial pose", "[inital_pose_test]") {
   auto buffer = std::make_unique<tf2_ros::Buffer>(node->get_clock());
   auto listener = std::make_unique<tf2_ros::TransformListener>(*buffer, node);
 
+  //  ############################ Begin_Citation [11]  ############################
   auto request = std::make_shared<nuturtle_control::srv::InitialPose::Request>();
   request->x = 1.0, request->y = 0.5, request->theta = 0.5;
-
+  //  ############################ End_Citation [11]  ############################
   rclcpp::Time start_time = rclcpp::Clock().now();
   rclcpp::Time ti = rclcpp::Time(0);
   js_pub.header.stamp = ti;
 
   publisher_js->publish(js_pub);
 
+  //  ############################ Begin_Citation [11]  ############################
   while (!client->wait_for_service(0s)) {
 
     if (!rclcpp::ok()) {
@@ -92,6 +94,7 @@ TEST_CASE("service test for initial pose", "[inital_pose_test]") {
     }
   }
   auto future_result = client->async_send_request(request);
+  //  ############################ End_Citation [11]  ############################
 
   if (rclcpp::spin_until_future_complete(node, future_result) ==
     rclcpp::FutureReturnCode::SUCCESS)
