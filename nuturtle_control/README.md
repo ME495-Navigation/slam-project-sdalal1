@@ -43,7 +43,8 @@ The  `use_rviz` options are:
 4. If you want to visualize on the host, you ca run `ros2 launch cmd_src:=none robot:=none use_rviz=true` to launch the rviz with blue robot.
 5. From the host, run `ros2 service call /control nuturtle_control/srv/Control "{velocity: 0.1, radius: 0.5}` and watch the robot create circles on the ground. 
 
-The video is as follows: <br>
+The video is as follows:
+
 [!CIRCLE](https://github.com/ME495-Navigation/slam-project-sdalal1/assets/80363654/478255eb-6318-4356-bef3-168067404fe9)
 
 ### Final Robot location wrt Odom
