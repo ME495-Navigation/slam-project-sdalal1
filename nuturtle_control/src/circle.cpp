@@ -1,6 +1,6 @@
 /// fill doxygen stuyle comments like nusim.cpp
-/// @file    circle.cpp
-/// @brief   The source file for the Circle class
+/// \file    circle.cpp
+/// \brief   The source file for the Circle class
 ///
 /// PARAMETERS:
 ///     rate (double): rate of the timer (in Hz)

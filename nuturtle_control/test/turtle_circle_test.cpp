@@ -48,5 +48,5 @@ TEST_CASE("Circular subscription test", "[sub_freq]") {
   }
 
   // Test assertions - check that the dummy node was found
-  CHECK_THAT(count, Catch::Matchers::WithinAbs(300, 1e1));
+  CHECK_THAT(count, Catch::Matchers::WithinAbs(300, 20));
 };

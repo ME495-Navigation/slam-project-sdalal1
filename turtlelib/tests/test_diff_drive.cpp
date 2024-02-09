@@ -122,5 +122,31 @@ namespace turtlelib{
         REQUIRE_THAT(dif.get_transformation().translation().y, 
             Catch::Matchers::WithinAbs(2.0, 1e-5));
     }
+    
+    TEST_CASE("all get testing", "[get_testing]"){
+        Transform2D tr{Vector2D{1.0,2.0}, 1.57};
+        auto dif = DiffDrive(tr,1.3,0.5);
+        REQUIRE_THAT(dif.get_transformation().rotation(), 
+            Catch::Matchers::WithinAbs(1.57, 1e-5));
+        REQUIRE_THAT(dif.get_transformation().translation().x, 
+            Catch::Matchers::WithinAbs(1.0, 1e-5));
+        REQUIRE_THAT(dif.get_transformation().translation().y, 
+            Catch::Matchers::WithinAbs(2.0, 1e-5));
+        REQUIRE_THAT(dif.get_wheel_angle().left,
+            Catch::Matchers::WithinAbs(0.0, 1e-5));
+        REQUIRE_THAT(dif.get_wheel_angle().right,
+            Catch::Matchers::WithinAbs(0.0, 1e-5));
+        REQUIRE_THAT(dif.get_wheel_radius(),
+            Catch::Matchers::WithinAbs(0.5, 1e-5));
+        REQUIRE_THAT(dif.get_wheel_track(),
+            Catch::Matchers::WithinAbs(1.3, 1e-5));
+        REQUIRE_THAT(dif.get_twist().omega,
+            Catch::Matchers::WithinAbs(0.0, 1e-5));
+        REQUIRE_THAT(dif.get_twist().x,
+            Catch::Matchers::WithinAbs(0.0, 1e-5));
+        REQUIRE_THAT(dif.get_twist().y,
+            Catch::Matchers::WithinAbs(0.0, 1e-5));
+    }
 
+    
 }

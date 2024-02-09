@@ -37,7 +37,7 @@
 using namespace std::chrono_literals;
 using turtlelib::almost_equal;
 
-
+/// \brief Controller to set paramters for the robot
 class TurtleControl : public rclcpp::Node
 {
 public:
@@ -48,7 +48,7 @@ public:
     declare_parameter("track_width", 0.16);
     declare_parameter("motor_cmd_max", 265);
     declare_parameter("motor_cmd_per_rad_sec", 0.024);
-    declare_parameter("encoder_ticks_per_rad", 1.0/0.00153398078);
+    declare_parameter("encoder_ticks_per_rad", 1.0 / 0.00153398078);
     declare_parameter("collision_radius", 0.11);
 
     wheel_radius_ = get_parameter("wheel_radius").as_double();
@@ -94,6 +94,8 @@ private:
   rclcpp::Subscription<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_subscription;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_publish;
 
+  /// \brief  Callback for the cmd_vel topic subscription
+  /// \param msg  The incoming message that provides the twist of the body frame
   void velo_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
   {
     auto a = msg->angular.z;
@@ -121,6 +123,8 @@ private:
     velo_publish->publish(pub_wheel);
   }
 
+  /// \brief  callback function to handle sensor data
+  /// \param msg Sensor data from sensors on NuturtleBot and simulaiton values
   void sensor_callback(const nuturtlebot_msgs::msg::SensorData::SharedPtr msg)
   {
 

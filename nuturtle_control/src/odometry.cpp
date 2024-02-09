@@ -5,7 +5,7 @@
 ///     wheel_radius (double): radius of the wheels
 ///     track_width (double): width between the left and right wheels
 ///     body_id (string): body frame link name
-///     odom_id (string): odom frame link name (defaults: odom)                   
+///     odom_id (string): odom frame link name (defaults: odom)
 ///     wheel_left (string):  left wheel link name
 ///     wheel_right (string): right wheel link name
 /// PUBLISHES:
