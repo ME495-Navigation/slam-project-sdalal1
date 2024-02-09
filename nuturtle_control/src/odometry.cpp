@@ -1,4 +1,21 @@
-
+/// \file odometry.cpp
+/// \brief Contains the implementation of the Odometry class
+///
+/// PARAMETERS:
+///     wheel_radius (double): radius of the wheels
+///     track_width (double): width between the left and right wheels
+///     body_id (string): body frame link name
+///     odom_id (string): odom frame link name (defaults: odom)                   
+///     wheel_left (string):  left wheel link name
+///     wheel_right (string): right wheel link name
+/// PUBLISHES:
+///      /odom (nav_msgs::msg::Odometry): contains the odometry message
+/// SUBSCRIBES:
+///      /joint_states (sensor_msgs::msg::JointState): joint states from sim or real robot
+/// SERVICES:
+///      initial_pose (nuturtle_control::srv::InitialPose): Sets the initial pose of blue robot
+/// BROADCASTS:
+///      odom_id -> base_id
 
 #include <chrono>
 #include <functional>
@@ -38,33 +55,36 @@ public:
     wheel_left = get_parameter("wheel_left").as_string();
     wheel_right = get_parameter("wheel_right").as_string();
 
-    if(body_id == " " || wheel_left == " " || wheel_right ==" " || wheel_radius_ == 0.0 || track_width_ ==0.0){
+    if (body_id == " " || wheel_left == " " || wheel_right == " " || wheel_radius_ == 0.0 ||
+      track_width_ == 0.0)
+    {
       RCLCPP_ERROR_STREAM(this->get_logger(), "a paramter not defined not defined");
-      RCLCPP_ERROR_STREAM(this->get_logger(), "body_id: "<<body_id);
-      RCLCPP_ERROR_STREAM(this->get_logger(), "wheel_left: "<<wheel_left);
-      RCLCPP_ERROR_STREAM(this->get_logger(), "Wheel_right: "<<wheel_right);
-      RCLCPP_ERROR_STREAM(this->get_logger(), "wheel_radius: "<<wheel_radius_);
-      RCLCPP_ERROR_STREAM(this->get_logger(), "track_width: "<<track_width_);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "body_id: " << body_id);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "wheel_left: " << wheel_left);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Wheel_right: " << wheel_right);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "wheel_radius: " << wheel_radius_);
+      RCLCPP_ERROR_STREAM(this->get_logger(), "track_width: " << track_width_);
       throw std::runtime_error("runtime_error_exception");
     }
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "body_id"<<body_id);
     joint_subscription = create_subscription<sensor_msgs::msg::JointState>(
-        "joint_states", 10, std::bind(&Odometry::joint_callback, this, std::placeholders::_1));
+      "joint_states", 10, std::bind(&Odometry::joint_callback, this, std::placeholders::_1));
     srv_initial_pose =
       create_service<nuturtle_control::srv::InitialPose>(
       "initial_pose",
-      std::bind(&Odometry::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
+      std::bind(
+        &Odometry::initial_pose_callback, this, std::placeholders::_1,
+        std::placeholders::_2));
     odom_publisher = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     timer_ = create_wall_timer(
-      1000ms/200, std::bind(&Odometry::timer_callback, this));
+      1000ms / 200, std::bind(&Odometry::timer_callback, this));
 
     tr = {};
     diff = std::make_unique<turtlelib::DiffDrive>(tr, track_width_, wheel_radius_);
-    
+
   }
+
 private:
   rclcpp::TimerBase::SharedPtr timer_;
   std::string body_id = " ";
@@ -90,18 +110,19 @@ private:
   /// \brief timer callbacck publishing transforms and odometry
   void timer_callback()
   {
-    
-    tf_broadcaster_ -> sendTransform(t);
-    odom_publisher -> publish(odom_pub);
+
+    tf_broadcaster_->sendTransform(t);
+    odom_publisher->publish(odom_pub);
   }
 
   /// \brief  callback function for the joint state subscription
   /// \param msg The Joint State message from the topic /joint_states
-  void joint_callback(const sensor_msgs::msg::JointState::SharedPtr msg){
+  void joint_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
+  {
     // RCLCPP_INFO_STREAM(this->get_logger(), "in joint callback pose");
     js_pos.position = msg->position;
 
-    if(checker){
+    if (checker) {
       // RCLCPP_INFO_STREAM(this->get_logger(), "cchecker_triggered");
       auto old_js_left = old_js.position.at(0);
       auto old_js_right = old_js.position.at(1);
@@ -121,7 +142,7 @@ private:
       // RCLCPP_INFO_STREAM(this->get_logger(), "right delta"<<delta_js_right);
 
       // RCLCPP_INFO_STREAM(this->get_logger(), "transformation" << transformation);
-      transformation  = diff->get_transformation();
+      transformation = diff->get_transformation();
 
       odom_pub.header.stamp = this->get_clock()->now();
       odom_pub.header.frame_id = odom_id;
@@ -133,9 +154,9 @@ private:
       q.setRPY(0, 0, transformation.rotation());
 
       odom_pub.pose.pose.orientation.x = q.x();
-      odom_pub.pose.pose.orientation.y = q.y(); 
-      odom_pub.pose.pose.orientation.z = q.z(); 
-      odom_pub.pose.pose.orientation.w = q.w(); 
+      odom_pub.pose.pose.orientation.y = q.y();
+      odom_pub.pose.pose.orientation.z = q.z();
+      odom_pub.pose.pose.orientation.w = q.w();
 
       odom_pub.twist.twist.linear.x = diff->get_twist().x;
       odom_pub.twist.twist.linear.y = diff->get_twist().y;
@@ -143,7 +164,7 @@ private:
       odom_pub.twist.twist.angular.x = 0.0;
       odom_pub.twist.twist.angular.y = 0.0;
       odom_pub.twist.twist.angular.z = diff->get_twist().omega;
-      
+
 
       t.header.frame_id = odom_id;
       t.child_frame_id = body_id;
@@ -155,31 +176,29 @@ private:
       t.transform.rotation.y = q.y();
       t.transform.rotation.z = q.z();
       t.transform.rotation.w = q.w();
-      
+
 
       old_js = *msg;
-    }
-    else{
+    } else {
       checker = true;
-      // RCLCPP_INFO_STREAM(this->get_logger(), "checker set to true");
       old_js = *msg;
     }
-    };
+  }
 
   /// \brief Call back for initial pose service
   /// \param req Inital pose request from srv
   void initial_pose_callback(
     const std::shared_ptr<nuturtle_control::srv::InitialPose::Request> request,
-    const std::shared_ptr<nuturtle_control::srv::InitialPose::Response>){
-      // RCLCPP_INFO_STREAM(this->get_logger(), "in inital _callback pose");
-      double x_pos = request->x;
-      double y_pos = request->y;
-      auto theta_pos = request->theta;
+    const std::shared_ptr<nuturtle_control::srv::InitialPose::Response>)
+  {
+    double x_pos = request->x;
+    double y_pos = request->y;
+    auto theta_pos = request->theta;
 
-      turtlelib::Transform2D trans{turtlelib::Vector2D{x_pos,y_pos}, theta_pos};
-      turtlelib::DiffDrive new_diff{trans,track_width_, wheel_radius_};
-      diff->change_transform(trans);
-  };
+    turtlelib::Transform2D trans{turtlelib::Vector2D{x_pos, y_pos}, theta_pos};
+    turtlelib::DiffDrive new_diff{trans, track_width_, wheel_radius_};
+    diff->change_transform(trans);
+  }
 };
 
 /// \brief The main function to spin the node

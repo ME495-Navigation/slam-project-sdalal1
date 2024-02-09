@@ -9,12 +9,15 @@
 ///     obstacles/x (double[]): Obstacles x position wrt nusim/world (m)
 ///     obstacles/y (double[]): Obstacles y position wrt nusim/world (m)
 ///     obstacles/r (double): radius of the obstacles (cylinder) (m)
-///     arena_x_length: length of arena (m)
-///     arena_y_length: width of arena (m)
+///     arena_x_length (vector): length of arena (m)
+///     arena_y_length (vector): width of arena (m)
 /// PUBLISHES:
 ///     ~/timestep (std_msgs::msg::Uint64): Inerations of the simulation
 ///     ~/obstacles (visualization_msgs::msg::MarkerArray): cylinder objects in RVIZ
 ///     ~/walls (visualization_msgs::msg::MarkerArray): arena in RVIZ
+///     red/sensor_data (nusim_ros::msg::SensorData): sensor data of the red bot
+/// SUBSCRIBES:
+///      /red/cmd_vel (geometry_msgs::msg::Twist): Velocity commands for the red bot
 /// SERVICES:
 ///     ~/reset (std_srvs::srv::Empty): resets simulation to the intial values
 ///     ~/teleport (nusim::srv::Teleport): teleports the robot in simulation to the given position and orientation
@@ -104,7 +107,7 @@ public:
       10);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     ground_frame_loc(x0, y0, theta0);
-    tr = {turtlelib::Vector2D{x0,y0} , theta0};
+    tr = {turtlelib::Vector2D{x0, y0}, theta0};
     diff = std::make_unique<turtlelib::DiffDrive>(tr, track_width_, wheel_radius_);
     publish_walls();
     publish_obs();
@@ -331,12 +334,12 @@ private:
     new_wheels.left_velocity = msg->left_velocity;
     new_wheels.right_velocity = msg->right_velocity;
 
-    left_wheel +=new_wheels.left_velocity *motor_cmd_per_rad_sec_/rate * 652.229299363;
-    right_wheel +=new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate * 652.229299363;
+    left_wheel += new_wheels.left_velocity * motor_cmd_per_rad_sec_ / rate * 652.229299363;
+    right_wheel += new_wheels.right_velocity * motor_cmd_per_rad_sec_ / rate * 652.229299363;
 
     diff->compute_fk(
-      new_wheels.left_velocity*motor_cmd_per_rad_sec_/rate,
-      new_wheels.right_velocity*motor_cmd_per_rad_sec_/rate);
+      new_wheels.left_velocity * motor_cmd_per_rad_sec_ / rate,
+      new_wheels.right_velocity * motor_cmd_per_rad_sec_ / rate);
     auto trans_red = diff->get_transformation();
     ground_frame_loc(trans_red.translation().x, trans_red.translation().y, trans_red.rotation());
   }

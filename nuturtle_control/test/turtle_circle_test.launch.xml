@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+<catch2_launch_file description='Circle Test'/>
+    <node pkg="nuturtle_control" exec="circle" name="circle"/>
+    <catch2_integration_test_node pkg="nuturtle_control" exec="turtle_circle_test" name="turtle_circle_test"></catch2_integration_test_node>
+</launch>

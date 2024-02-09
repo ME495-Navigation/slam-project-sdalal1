@@ -60,7 +60,7 @@ find_package(Doxygen)
 
 # Building documentation should be optional.
 # To build documentation pass -DBUILD_DOCS=ON when generating the build system
-option(BUILD_DOCS "Build the documentation" OFF)
+option(BUILD_DOCS "Build the documentation" ON)
 
 # build just because Doxygen is missing
 if(${DOXYGEN_FOUND} AND ${BUILD_DOCS})
@@ -86,14 +86,20 @@ if(BUILD_TESTING)
   ament_target_dependencies(turtle_odom_test turtlelib rclcpp std_srvs geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros)
   target_link_libraries(turtle_odom_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
 
+  add_executable(turtle_circle_test test/turtle_circle_test.cpp)
+  ament_target_dependencies(turtle_circle_test rclcpp std_srvs geometry_msgs)
+  target_link_libraries(turtle_circle_test catch_ros2::catch_ros2_with_node_main "${cpp_typesupport_target}")
+
   install(TARGETS
   turtle_control_test
   turtle_odom_test
+  turtle_circle_test
   DESTINATION lib/${PROJECT_NAME})
 
   install(FILES
   test/turtle_control_test.launch.xml
   test/turtle_odom_test.launch.xml
+  test/turtle_circle_test.launch.xml
   DESTINATION share/${PROJECT_NAME}
   )
   find_package(ament_lint_auto REQUIRED)
@@ -105,13 +111,17 @@ if(BUILD_TESTING)
   # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
-  
+
   catch_ros2_add_integration_test(test_1
-  LAUNCH_FILE turtle_control_test.launch.xml 
+  LAUNCH_FILE turtle_control_test.launch.xml
   )
 
   catch_ros2_add_integration_test(test_2
-  LAUNCH_FILE turtle_odom_test.launch.xml 
+  LAUNCH_FILE turtle_odom_test.launch.xml
+  )
+
+  catch_ros2_add_integration_test(test_3
+  LAUNCH_FILE turtle_circle_test.launch.xml
   )
 endif()
 
