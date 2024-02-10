@@ -108,6 +108,9 @@ TEST_CASE("service test for initial pose", "[inital_pose_test]") {
       rclcpp::spin_some(node);
       try {
         t_test = buffer->lookupTransform("odom", "base_footprint", tf2::TimePointZero);
+        if (t_test.transform.translation.x != 0.0) {
+          t = t_test;
+        }
       } catch (const tf2::TransformException & ex) {
         std::cout << ex.what() << std::endl;
         continue;
@@ -117,8 +120,8 @@ TEST_CASE("service test for initial pose", "[inital_pose_test]") {
     std::cout << "failed to send command" << std::endl;
   }
 
-  CHECK_THAT(t_test.transform.translation.x, Catch::Matchers::WithinAbs(0.0163832661, 1e-5));
-  CHECK_THAT(t_test.transform.translation.y, Catch::Matchers::WithinAbs(-0.0016955391, 1e-5));
-  CHECK_THAT(t_test.transform.rotation.z, Catch::Matchers::WithinAbs(-0.1029423121, 1e-5));
-  CHECK_THAT(t_test.transform.rotation.w, Catch::Matchers::WithinAbs(0.9946873279, 1e-5));
+  CHECK_THAT(t.transform.translation.x, Catch::Matchers::WithinAbs(0.0163832661, 1e-5));
+  CHECK_THAT(t.transform.translation.y, Catch::Matchers::WithinAbs(-0.0016955391, 1e-5));
+  CHECK_THAT(t.transform.rotation.z, Catch::Matchers::WithinAbs(-0.1029423121, 1e-5));
+  CHECK_THAT(t.transform.rotation.w, Catch::Matchers::WithinAbs(0.9946873279, 1e-5));
 }

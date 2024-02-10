@@ -90,7 +90,7 @@ private:
     checker = true;
     auto velo = request->velocity;
     auto radius = request->radius;
-    vel_pub.linear.x = velo*radius;
+    vel_pub.linear.x = velo * radius;
     vel_pub.angular.z = velo;
 
   }
