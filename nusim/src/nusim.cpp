@@ -64,8 +64,8 @@ public:
     declare_parameter("arena_x_length", 5.0);
     declare_parameter("arena_y_length", 10.0);
     declare_parameter("motor_cmd_per_rad_sec", 0.024);
-    declare_parameter("wheel_radius", 0.033);
-    declare_parameter("track_width", 0.16);
+    declare_parameter("wheel_radius", 0.0);
+    declare_parameter("track_width", 0.0);
 
     rate = get_parameter("rate").as_double();
     x0 = get_parameter("x0").as_double();
