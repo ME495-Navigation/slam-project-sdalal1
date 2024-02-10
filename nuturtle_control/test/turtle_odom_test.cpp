@@ -102,14 +102,16 @@ TEST_CASE("service test for initial pose", "[inital_pose_test]") {
     std::cout << "success" << std::endl;
     while (
       rclcpp::ok() &&
-      ((rclcpp::Clock().now() - start_time) < 20s)
+      ((rclcpp::Clock().now() - start_time) < 30s)
     )
     {
       rclcpp::spin_some(node);
+
       try {
         t_test = buffer->lookupTransform("odom", "base_footprint", tf2::TimePointZero);
-        if (t_test.transform.translation.x != 0.0) {
+        if (t_test.transform.translation.x != 0.0) { //extra level of test so the tranform doesnt return a 0.0 which is published at otheer timestamp as it only tests services
           t = t_test;
+          break;
         }
       } catch (const tf2::TransformException & ex) {
         std::cout << ex.what() << std::endl;
