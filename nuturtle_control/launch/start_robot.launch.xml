@@ -32,6 +32,7 @@ Mainly used it for debugging the syntax for and's and or's [11]-->
 
 <node pkg="nusim" exec="nusim" if="$(eval '\'$(var robot)\' == \'nusim\'')">
     <param from="$(find-pkg-share nusim)/config/basic_world.yaml" />
+    <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
 </node>
 
 <include file = "$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"
