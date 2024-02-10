@@ -51,4 +51,4 @@ The video below shows the movent of robot in a circle, using the `control`, `rev
 The picture uploaded below show the location of links in RVIZ after completing couple of circle  movements. The psoition shows the slipping and error in the robot odometry.
 ![Screenshot from 2024-02-08 23-02-55](https://github.com/ME495-Navigation/slam-project-sdalal1/assets/80363654/cdbd73af-4c87-4386-8006-755c0855e82e)
 
-
+The picture shows that displacement of base_footprint w.r.t odom in `x` and `y` is `(0.24,0.093)` which leads to the total error in odometry to be `~0.2579 m`
