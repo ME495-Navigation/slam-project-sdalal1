@@ -94,4 +94,13 @@ Mainly used it for debugging the syntax for and's and or's [11]-->
 <!-- <node pkg="tf2_ros" if="$(eval '\'$(var robot)\' != \'none\'')" exec="static_transform_publisher" args="0 0 0 0 0 0 nusim/world odom"/> -->
 <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 nusim/world odom"/>
 
+
+<node pkg="hls_lfcd_lds_driver" exec="hlds_laser_publisher" if="$(eval '\'$(var robot)\' == \'localhost\'')">
+    <param name=  "port" value="/dev/ttyUSB1"/>
+</node>
+
+<!-- <include file = "$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py"
+    if="$(eval '\'$(var robot)\' == \'localhost\'')">
+    <arg name="port" value="/dev/ttyUSB0"/>
+</include> -->
 </launch>

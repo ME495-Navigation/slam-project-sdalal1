@@ -35,6 +35,7 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "std_srvs/srv/empty.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "nusim/srv/teleport.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -44,6 +45,7 @@
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 #include "turtlelib/diff_drive.hpp"
 #include "turtlelib/geometry2d.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 using namespace std::chrono_literals;
 
@@ -66,6 +68,8 @@ public:
     declare_parameter("motor_cmd_per_rad_sec", 0.024);
     declare_parameter("wheel_radius", 0.0);
     declare_parameter("track_width", 0.0);
+    declare_parameter("input_noise", 0.0);
+    declare_parameter("slip_fraction", 0.0);
 
     rate = get_parameter("rate").as_double();
     x0 = get_parameter("x0").as_double();
@@ -79,6 +83,8 @@ public:
     motor_cmd_per_rad_sec_ = get_parameter("motor_cmd_per_rad_sec").as_double();
     wheel_radius_ = get_parameter("wheel_radius").as_double();
     track_width_ = get_parameter("track_width").as_double();
+    input_noise_ = get_parameter("input_width").as_double();
+    slip_fraction_ = get_parameter("slip_fraction").as_double();
     timer_ = create_wall_timer(
       1000ms / rate, std::bind(&Nusim::timer_callback, this));
     srv_reset =
@@ -99,7 +105,7 @@ public:
     publisher_obs = create_publisher<visualization_msgs::msg::MarkerArray>(
       "~/obstacles",
       qos_profile);
-
+    red_path_pub =  create_publisher<nav_msgs::msg::Path>("/path",10);
     red_wheel_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
       "red/wheel_cmd", 10, std::bind(&Nusim::red_wheel_callback, this, std::placeholders::_1));
     sensor_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>(
@@ -124,6 +130,8 @@ private:
   rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr red_wheel_sub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_pub;
 
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr red_path_pub;
+  
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   visualization_msgs::msg::MarkerArray arr = visualization_msgs::msg::MarkerArray();
@@ -134,6 +142,8 @@ private:
   visualization_msgs::msg::Marker w4 = visualization_msgs::msg::Marker();
 
   geometry_msgs::msg::TransformStamped t = geometry_msgs::msg::TransformStamped();
+  nav_msgs::msg::Path red_path = nav_msgs::msg::Path();
+  geometry_msgs::msg::PoseStamped  ps = geometry_msgs::msg::PoseStamped();
 
   double rate = 0.0;
   double x0 = 0.0;
@@ -151,6 +161,8 @@ private:
   double motor_cmd_per_rad_sec_ = 0.0;
   double wheel_radius_ = 0.033;
   double track_width_ = 0.16;
+  double input_noise_ = 0.0;
+  double slip_fraction_ = 0.0;
 
   turtlelib::Transform2D tr;
   std::unique_ptr<turtlelib::DiffDrive> diff;
@@ -300,8 +312,10 @@ private:
     red_sensor.left_encoder = left_wheel;
     red_sensor.right_encoder = right_wheel;
 
+    red_path.header.stamp = this->get_clock()->now();
 
     t.header.stamp = this->get_clock()->now();
+    ps.header.stamp = this->get_clock()->now();
 
     tf_broadcaster_->sendTransform(t);
 
@@ -342,6 +356,23 @@ private:
       new_wheels.right_velocity * motor_cmd_per_rad_sec_ / rate);
     auto trans_red = diff->get_transformation();
     ground_frame_loc(trans_red.translation().x, trans_red.translation().y, trans_red.rotation());
+
+    red_path.header.frame_id = "nusim/world";
+
+    ps.header.frame_id = "nusim/world";
+    ps.pose.position.x = trans_red.translation().x;
+    ps.pose.position.y = trans_red.translation().y;
+    tf2::Quaternion q_red;
+    q_red.setRPY(0,0,trans_red.rotation());
+    ps.pose.orientation.x = q_red.x();
+    ps.pose.orientation.y = q_red.y();
+    ps.pose.orientation.z = q_red.z();
+    ps.pose.orientation.w = q_red.w();
+
+    red_path.poses.push_back(ps);
+    red_path_pub -> publish(red_path);
+
+
   }
 
   size_t count_{0};
