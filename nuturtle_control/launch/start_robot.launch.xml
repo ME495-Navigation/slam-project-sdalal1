@@ -99,8 +99,8 @@ Mainly used it for debugging the syntax for and's and or's [11]-->
     <param name=  "port" value="/dev/ttyUSB1"/>
 </node>
 
-<!-- <include file = "$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py"
+<include file = "$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py"
     if="$(eval '\'$(var robot)\' == \'localhost\'')">
     <arg name="port" value="/dev/ttyUSB0"/>
-</include> -->
+</include>
 </launch>

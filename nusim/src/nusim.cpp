@@ -68,8 +68,8 @@ public:
     declare_parameter("motor_cmd_per_rad_sec", 0.024);
     declare_parameter("wheel_radius", 0.0);
     declare_parameter("track_width", 0.0);
-    declare_parameter("input_noise", 0.0);
-    declare_parameter("slip_fraction", 0.0);
+    // declare_parameter("input_noise", 0.0);
+    // declare_parameter("slip_fraction", 0.0);
 
     rate = get_parameter("rate").as_double();
     x0 = get_parameter("x0").as_double();
@@ -83,8 +83,8 @@ public:
     motor_cmd_per_rad_sec_ = get_parameter("motor_cmd_per_rad_sec").as_double();
     wheel_radius_ = get_parameter("wheel_radius").as_double();
     track_width_ = get_parameter("track_width").as_double();
-    input_noise_ = get_parameter("input_width").as_double();
-    slip_fraction_ = get_parameter("slip_fraction").as_double();
+    // input_noise_ = get_parameter("input_width").as_double();
+    // slip_fraction_ = get_parameter("slip_fraction").as_double();
     timer_ = create_wall_timer(
       1000ms / rate, std::bind(&Nusim::timer_callback, this));
     srv_reset =
@@ -105,7 +105,7 @@ public:
     publisher_obs = create_publisher<visualization_msgs::msg::MarkerArray>(
       "~/obstacles",
       qos_profile);
-    red_path_pub =  create_publisher<nav_msgs::msg::Path>("/path",10);
+    red_path_pub =  create_publisher<nav_msgs::msg::Path>("red/path",10);
     red_wheel_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
       "red/wheel_cmd", 10, std::bind(&Nusim::red_wheel_callback, this, std::placeholders::_1));
     sensor_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>(
