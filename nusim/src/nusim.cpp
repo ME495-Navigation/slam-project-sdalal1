@@ -70,10 +70,11 @@ public:
     declare_parameter("motor_cmd_per_rad_sec", 0.024);
     declare_parameter("wheel_radius", 0.0);
     declare_parameter("track_width", 0.0);
+    declare_parameter("collision_radius", 0.11);
     declare_parameter("input_noise", 0.01);
     declare_parameter("slip_fraction", 0.01);
     declare_parameter("basic_sensor_variance", 0.01);
-    declare_parameter("max_range", 8.0); 
+    declare_parameter("max_range", 1.0);
 
     rate = get_parameter("rate").as_double();
     x0 = get_parameter("x0").as_double();
@@ -91,11 +92,12 @@ public:
     slip_fraction_ = get_parameter("slip_fraction").as_double();
     basic_sensor_variance_ = get_parameter("basic_sensor_variance").as_double();
     max_range_ = get_parameter("max_range").as_double();
+    collision_radius_ = get_parameter("collision_radius").as_double();
 
     timer_ = create_wall_timer(
       1000ms / rate, std::bind(&Nusim::timer_callback, this));
     fake_timer_ = create_wall_timer(
-      1s / 5, std::bind(&Nusim::fake_timer_callback, this));
+      200ms, std::bind(&Nusim::fake_timer_callback, this));
     srv_reset =
       create_service<std_srvs::srv::Empty>(
       "~/reset",
@@ -111,10 +113,16 @@ public:
     qos_profile.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
     publisher_walls =
       create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos_profile);
+    rclcpp::QoS qos_profile1(10);
+    qos_profile1.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+    qos_profile1.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
     publisher_obs = create_publisher<visualization_msgs::msg::MarkerArray>(
       "~/obstacles",
       qos_profile);
-    red_path_pub =  create_publisher<nav_msgs::msg::Path>("red/path",10);
+    publish_fake_obs = create_publisher<visualization_msgs::msg::MarkerArray>(
+      "fake_sensor",
+      qos_profile1);
+    red_path_pub = create_publisher<nav_msgs::msg::Path>("red/path", 10);
     red_wheel_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
       "red/wheel_cmd", 10, std::bind(&Nusim::red_wheel_callback, this, std::placeholders::_1));
     sensor_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>(
@@ -136,6 +144,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr publisher_timestep;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_walls;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_obs;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publish_fake_obs;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::TimerBase::SharedPtr fake_timer_;
   // C.7 sub
@@ -145,7 +154,7 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr laser_pub;
 
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr red_path_pub;
-  
+
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   visualization_msgs::msg::MarkerArray arr = visualization_msgs::msg::MarkerArray();
@@ -155,9 +164,10 @@ private:
   visualization_msgs::msg::Marker w3 = visualization_msgs::msg::Marker();
   visualization_msgs::msg::Marker w4 = visualization_msgs::msg::Marker();
 
+
   geometry_msgs::msg::TransformStamped t = geometry_msgs::msg::TransformStamped();
   nav_msgs::msg::Path red_path = nav_msgs::msg::Path();
-  geometry_msgs::msg::PoseStamped  ps = geometry_msgs::msg::PoseStamped();
+  geometry_msgs::msg::PoseStamped ps = geometry_msgs::msg::PoseStamped();
   sensor_msgs::msg::LaserScan laser = sensor_msgs::msg::LaserScan();
 
   double rate = 0.0;
@@ -180,6 +190,7 @@ private:
   double slip_fraction_ = 0.0;
   double basic_sensor_variance_ = 0.0;
   double max_range_ = 0.0;
+  double collision_radius_ = 0.0;
 
   turtlelib::Transform2D tr;
   std::unique_ptr<turtlelib::DiffDrive> diff;
@@ -316,7 +327,9 @@ private:
     t.transform.rotation.w = q.w();
   }
 
-  void publish_laser(){
+  /// @brief the laser publisher
+  void publish_laser()
+  {
     laser.header.frame_id = "red/base_footprint";
     laser.angle_min = -turtlelib::PI;
     laser.angle_max = turtlelib::PI;
@@ -326,22 +339,60 @@ private:
     laser.range_min = 0.16;
     laser.range_max = 8.0;
 
-    laser_pub -> publish(laser);
+    laser_pub->publish(laser);
   }
 
+  /// @brief random number generator
+  /// @return the random number
   std::mt19937 & get_random()
   {
     // static variables inside a function are created once and persist for the remainder of the program
-    static std::random_device rd{}; 
+    static std::random_device rd{};
     static std::mt19937 mt{rd()};
     // we return a reference to the pseudo-random number genrator object. This is always the
     // same object every time get_random is called
     return mt;
   }
 
+  /// @brief fake obstacle publisher
   void fake_timer_callback()
   {
-    
+    visualization_msgs::msg::MarkerArray fake_obs = visualization_msgs::msg::MarkerArray();
+    visualization_msgs::msg::Marker fake_cyl = visualization_msgs::msg::Marker();
+    fake_cyl.header.stamp = this->get_clock()->now();
+    fake_cyl.header.frame_id = "red/base_footprint";
+    fake_cyl.type = visualization_msgs::msg::Marker::CYLINDER;
+    std::normal_distribution<> d1(0.0, basic_sensor_variance_);
+    auto noise_fake = d1(get_random());
+    for (int i = 0; i < int(obs_x.size()); i++) {
+      if (std::sqrt(
+          std::pow(
+            obs_x[i] - diff->get_transformation().translation().x,
+            2) +
+          std::pow(
+            obs_y[i] - diff->get_transformation().translation().y,
+            2)) > (max_range_ - obs_r - collision_radius_))
+      {
+        fake_cyl.action = visualization_msgs::msg::Marker::DELETE;
+      } else {
+        fake_cyl.id = i + 1;
+        fake_cyl.scale.x = noise_fake + (obs_r * 2);
+        fake_cyl.scale.y = noise_fake + (obs_r * 2);
+        fake_cyl.scale.z = 0.25;
+        turtlelib::Transform2D Two{turtlelib::Vector2D{obs_x[i], obs_y[i]}, 0.0};
+        auto Trc = (diff->get_transformation()).inv() * Two;
+        fake_cyl.pose.position.x = Trc.translation().x + noise_fake;
+        fake_cyl.pose.position.y = Trc.translation().y + noise_fake;
+        fake_cyl.pose.position.z = 0.25 / 2;
+        fake_cyl.color.r = 1.0;
+        fake_cyl.color.g = 1.0;
+        fake_cyl.color.b = 0.0;
+        fake_cyl.color.a = 1.0;
+        fake_cyl.action = visualization_msgs::msg::Marker::ADD;
+      }
+      fake_obs.markers.push_back(fake_cyl);
+    }
+    publish_fake_obs->publish(fake_obs);
   }
 
   /// \brief Creates a timer to publish frames and timestep
@@ -354,7 +405,7 @@ private:
     publisher_timestep->publish(time_msg);
 
     red_sensor.stamp = this->get_clock()->now();
-    
+
     red_path.header.stamp = this->get_clock()->now();
 
     t.header.stamp = this->get_clock()->now();
@@ -394,24 +445,23 @@ private:
     auto right_wheel_velocity = (msg->right_velocity * motor_cmd_per_rad_sec_ / rate);
     std::normal_distribution<> d(0.0, input_noise_);
     auto noise = d(get_random());
-    
+
     auto slip_noise = std::uniform_real_distribution<>{-slip_fraction_, slip_fraction_};
-    
-    if(left_wheel_velocity != 0 ){
-      
+
+    if (left_wheel_velocity != 0) {
+
       left_wheel_velocity += noise;
     }
-    if (right_wheel_velocity!=0)
-    {
+    if (right_wheel_velocity != 0) {
       right_wheel_velocity += noise;
     }
     left_wheel += left_wheel_velocity;
-    right_wheel +=  right_wheel_velocity;
+    right_wheel += right_wheel_velocity;
 
     red_sensor.left_encoder = left_wheel * 652.229299363;
     red_sensor.right_encoder = right_wheel * 652.229299363;
 
-    auto slipping_noise = (1+ slip_noise(get_random()));
+    auto slipping_noise = (1 + slip_noise(get_random()));
 
     diff->compute_fk(
       slipping_noise * left_wheel_velocity,
@@ -425,14 +475,14 @@ private:
     ps.pose.position.x = trans_red.translation().x;
     ps.pose.position.y = trans_red.translation().y;
     tf2::Quaternion q_red;
-    q_red.setRPY(0,0,trans_red.rotation());
+    q_red.setRPY(0, 0, trans_red.rotation());
     ps.pose.orientation.x = q_red.x();
     ps.pose.orientation.y = q_red.y();
     ps.pose.orientation.z = q_red.z();
     ps.pose.orientation.w = q_red.w();
 
     red_path.poses.push_back(ps);
-    red_path_pub -> publish(red_path);
+    red_path_pub->publish(red_path);
 
   }
 

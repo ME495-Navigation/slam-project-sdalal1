@@ -77,7 +77,7 @@ public:
         &Odometry::initial_pose_callback, this, std::placeholders::_1,
         std::placeholders::_2));
     odom_publisher = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
-    blue_path_pub =  create_publisher<nav_msgs::msg::Path>("blue/path",10);
+    blue_path_pub = create_publisher<nav_msgs::msg::Path>("blue/path", 10);
 
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
@@ -106,7 +106,7 @@ private:
   nav_msgs::msg::Odometry odom_pub = nav_msgs::msg::Odometry();
   geometry_msgs::msg::TransformStamped t = geometry_msgs::msg::TransformStamped();
   nav_msgs::msg::Path blue_path = nav_msgs::msg::Path();
-  geometry_msgs::msg::PoseStamped  ps = geometry_msgs::msg::PoseStamped();
+  geometry_msgs::msg::PoseStamped ps = geometry_msgs::msg::PoseStamped();
 
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr blue_path_pub;
 
@@ -188,19 +188,18 @@ private:
       t.transform.rotation.w = q.w();
 
       blue_path.header.frame_id = odom_id;
-
       ps.header.frame_id = odom_id;
       ps.pose.position.x = transformation.translation().x;
       ps.pose.position.y = transformation.translation().y;
       tf2::Quaternion q_red;
-      q_red.setRPY(0,0,transformation.rotation());
+      q_red.setRPY(0, 0, transformation.rotation());
       ps.pose.orientation.x = q_red.x();
       ps.pose.orientation.y = q_red.y();
       ps.pose.orientation.z = q_red.z();
       ps.pose.orientation.w = q_red.w();
 
       blue_path.poses.push_back(ps);
-      blue_path_pub -> publish(blue_path);
+      blue_path_pub->publish(blue_path);
 
 
       old_js = *msg;
