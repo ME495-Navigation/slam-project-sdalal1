@@ -191,6 +191,10 @@ private:
   double basic_sensor_variance_ = 0.0;
   double max_range_ = 0.0;
   double collision_radius_ = 0.0;
+  double x_robot = 0.0;
+  double y_robot = 0.0;
+  double theta_robot = 0.0;
+  size_t count_{0};
 
   turtlelib::Transform2D tr;
   std::unique_ptr<turtlelib::DiffDrive> diff;
@@ -375,7 +379,7 @@ private:
       {
         fake_cyl.action = visualization_msgs::msg::Marker::DELETE;
       } else {
-        fake_cyl.id = i + 1;
+        fake_cyl.id = i + 10;
         fake_cyl.scale.x = noise_fake + (obs_r * 2);
         fake_cyl.scale.y = noise_fake + (obs_r * 2);
         fake_cyl.scale.z = 0.25;
@@ -412,12 +416,12 @@ private:
     ps.header.stamp = this->get_clock()->now();
     laser.header.stamp = this->get_clock()->now();
 
-    tf_broadcaster_->sendTransform(t);
-
     sensor_pub->publish(red_sensor);
 
+    tf_broadcaster_->sendTransform(t);
   }
 
+  // void check
   /// \brief The service to teleport the bot in rviz
   /// \param request The request to get the x, y and theta values
   void teleport_cb(
@@ -466,16 +470,21 @@ private:
     diff->compute_fk(
       slipping_noise * left_wheel_velocity,
       slipping_noise * right_wheel_velocity);
+
+    check_collision();
     auto trans_red = diff->get_transformation();
-    ground_frame_loc(trans_red.translation().x, trans_red.translation().y, trans_red.rotation());
+    x_robot = trans_red.translation().x;
+    y_robot = trans_red.translation().y;
+    theta_robot = trans_red.rotation();
+    ground_frame_loc(x_robot, y_robot, theta_robot);
 
     red_path.header.frame_id = "nusim/world";
 
     ps.header.frame_id = "nusim/world";
-    ps.pose.position.x = trans_red.translation().x;
-    ps.pose.position.y = trans_red.translation().y;
+    ps.pose.position.x = x_robot;
+    ps.pose.position.y = y_robot;
     tf2::Quaternion q_red;
-    q_red.setRPY(0, 0, trans_red.rotation());
+    q_red.setRPY(0, 0, theta_robot);
     ps.pose.orientation.x = q_red.x();
     ps.pose.orientation.y = q_red.y();
     ps.pose.orientation.z = q_red.z();
@@ -486,7 +495,24 @@ private:
 
   }
 
-  size_t count_{0};
+  void check_collision()
+  {
+    for (int i = 0; i < int(obs_x.size()); i++) {
+      if (std::sqrt(
+          std::pow(
+            obs_x[i] - diff->get_transformation().translation().x,
+            2) +
+          std::pow(
+            obs_y[i] - diff->get_transformation().translation().y,
+            2)) < (obs_r + collision_radius_))
+      {
+        turtlelib::Transform2D tr{turtlelib::Vector2D{x_robot, y_robot}, theta_robot};
+        diff->change_transform(tr);
+        return;
+      }
+    }
+  }
+
 };
 
 /// \brief The main function to spin the node
