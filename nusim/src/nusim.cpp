@@ -11,11 +11,21 @@
 ///     obstacles/r (double): radius of the obstacles (cylinder) (m)
 ///     arena_x_length (vector): length of arena (m)
 ///     arena_y_length (vector): width of arena (m)
+///     motor_cmd_per_rad_sec (double): motor command per radian per second
+///     wheel_radius (double): radius of the wheel (m)
+///     track_width (double): width of the track (m)
+///     collision_radius (double): radius of the collision (m)
+///     input_noise (double): noise in the wheel commands
+///     slip_fraction (double): fraction of slip
+///     basic_sensor_variance (double): basic sensor noise variance
+///     max_range (double): maximum range of the sensor
 /// PUBLISHES:
 ///     ~/timestep (std_msgs::msg::Uint64): Inerations of the simulation
 ///     ~/obstacles (visualization_msgs::msg::MarkerArray): cylinder objects in RVIZ
 ///     ~/walls (visualization_msgs::msg::MarkerArray): arena in RVIZ
 ///     red/sensor_data (nusim_ros::msg::SensorData): sensor data of the red bot
+///     red/path (nav_msgs::msg::Path): path of the red bot
+///     scan (sensor_msgs::msg::LaserScan): laser scan data
 /// SUBSCRIBES:
 ///      /red/cmd_vel (geometry_msgs::msg::Twist): Velocity commands for the red bot
 /// SERVICES:
@@ -128,8 +138,11 @@ public:
     sensor_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>(
       "red/sensor_data",
       10);
+    rclcpp::QoS qos_profile2(10);
+    qos_profile2.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+    qos_profile2.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
     laser_pub = create_publisher<sensor_msgs::msg::LaserScan>(
-      "red/laser", 10);
+      "scan", qos_profile2);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     ground_frame_loc(x0, y0, theta0);
     tr = {turtlelib::Vector2D{x0, y0}, theta0};
@@ -177,8 +190,8 @@ private:
   double arena_x_length = 0.0;
   double arena_y_length = 0.0;
   double obs_r = 0.0;
-  std::vector<double> obs_x = {2.0, 3.2, 4.2};
-  std::vector<double> obs_y = {3.0, 5.2, 2.1};
+  std::vector<double> obs_x = {-0.5,0.8,0.4};
+  std::vector<double> obs_y = {-0.7,-0.8,0.8};
 
   double left_wheel = 0.0;
   double right_wheel = 0.0;
@@ -334,16 +347,113 @@ private:
   /// @brief the laser publisher
   void publish_laser()
   {
-    laser.header.frame_id = "red/base_footprint";
-    laser.angle_min = -turtlelib::PI;
-    laser.angle_max = turtlelib::PI;
-    laser.angle_increment = 0.0174533; // in radians
-    laser.time_increment = 1;
-    laser.scan_time = 1;
-    laser.range_min = 0.16;
-    laser.range_max = 8.0;
+    laser.header.frame_id = "red/base_scan";
+    laser.header.stamp = this->get_clock()->now();
+    laser.angle_min = 0.0;
+    laser.angle_max = 2 * turtlelib::PI;
+    laser.angle_increment = 0.01745329238474369; // in radians
+    laser.time_increment = 0.0; //0.0005592841189354658;
+    laser.scan_time = 0.20134228467941284;
+    laser.range_min = 0.11999999731779099;
+    laser.range_max = 3.5;
+    laser.ranges.clear();
+    for(double i = laser.angle_min; i < laser.angle_max ; i += laser.angle_increment){
+      auto x_lidar_max = laser.range_max * std::cos(i);
+      auto y_lidar_max = laser.range_max * std::sin(i);
+      turtlelib::Point2D v1{x_lidar_max,y_lidar_max};
+      double dist =  laser.range_max;
+      double mag = laser.range_max;
+      auto v2 = diff->get_transformation()(v1);
+      auto test = diff->get_transformation()(v1);
+      auto slope = (v2.y - diff->get_transformation().translation().y)/(v2.x - diff->get_transformation().translation().x);
+      auto con = diff->get_transformation().translation().y - slope * diff->get_transformation().translation().x;
+      
+      if (v2.y > arena_y_length/2){
+        v2.y = arena_y_length/2;
+        v2.x = (arena_y_length/2 - con)/slope;
+        auto v3 = diff->get_transformation().inv()(v2);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
+        dist = std::min(dist,mag);
+      }
+      if (v2.x < -arena_x_length/2){
+        v2.x = -arena_x_length/2;
+        v2.y = (slope * -arena_x_length/2) + con;
+        auto v3 = diff->get_transformation().inv()(v2);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
+        dist = std::min(dist,mag);
+      }
+      if (v2.y < -arena_y_length/2){
+        v2.y = -arena_y_length/2;
+        v2.x = (-arena_y_length/2 - con)/slope;
+        auto v3 = diff->get_transformation().inv()(v2);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
+        dist = std::min(dist,mag);
+      }
+      if (v2.x > arena_x_length/2){
+        v2.x = arena_x_length/2;
+        v2.y = (arena_x_length/2 * slope)+ con;
+        auto v3 = diff->get_transformation().inv()(v2);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
+        dist = std::min(dist,mag);
+      }
+      for (int j = 0; j < int(obs_x.size()); j++) {
+        if(distance(obs_x[j],obs_y[j],diff->get_transformation().translation().x,diff->get_transformation().translation().y) < mag){
+          auto p_dist = abs(slope * obs_x[j] - obs_y[j] + con) / std::sqrt(slope * slope + 1);
+          if(p_dist <= obs_r){
+            double d1 = distance(obs_x[j],obs_y[j],diff->get_transformation().translation().x,diff->get_transformation().translation().y);
+            double d2 = distance(obs_x[j],obs_y[j],test.x,test.y);
 
+            if(turtlelib::almost_equal(std::sqrt(std::pow(d1,2)-std::pow(p_dist,2))+ std::sqrt(std::pow(d2,2)-std::pow(p_dist,2)), mag)){
+              auto d = std::sqrt(std::pow(d1,2)-std::pow(p_dist,2))- std::sqrt(std::pow(obs_r,2)-std::pow(p_dist,2));
+              dist = std::min(dist,d);
+            }
+            // auto dx = test.x - diff->get_transformation().translation().x;
+            // auto dy = test.y - diff->get_transformation().translation().y;
+            // auto dr = std::sqrt(dx * dx + dy * dy);
+            // auto D = (test.x * diff->get_transformation().translation().y) - (diff->get_transformation().translation().x * test.y);
+            
+            // auto delta = (obs_r * obs_r * dr * dr) - (D * D);
+            // if (delta >= 0.0){
+            //   auto sgn = (dy < 0.0) ? -1 : 1;
+            //   auto x1 = (D * dy + sgn * dx * std::sqrt(delta))/(dr * dr);
+            //   auto x2 = (D * dy - sgn * dx * std::sqrt(delta))/(dr * dr);
+            //   auto y1 = (-D * dx + std::abs(dy) * std::sqrt(delta))/(dr * dr);
+            //   auto y2 = (-D * dx - std::abs(dy) * std::sqrt(delta))/(dr * dr);
+            //   auto v3 = diff->get_transformation()(turtlelib::Point2D{x1,y1});
+            //   auto v4 = diff->get_transformation()(turtlelib::Point2D{x2,y2});
+            //   // auto d1 = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
+            //   // auto d2 = turtlelib::magnitude(turtlelib::Vector2D{v4.x,v4.y});
+            //   // auto v3 = turtlelib::Point2D{x1,y1};
+            //   // auto v4 = turtlelib::Point2D{x2,y2};
+            //   auto d1 = distance(v3.x,v3.y,0.0,0.0);
+            //   auto d2 = distance(v4.x,v4.y,0.0,0.0);
+            //   // auto d1 = distance(diff->get_transformation().translation().x,diff->get_transformation().translation().y,v3.x,v3.y);
+            //   // auto d2 = distance(diff->get_transformation().translation().x,diff->get_transformation().translation().y,v4.x,v4.y);
+            //   dist = std::min(mag,d1);
+            //   dist = std::min(dist,d2);
+            //   RCLCPP_INFO_STREAM(get_logger(),"d1"<<d1<<"d2"<<d2);
+            //   RCLCPP_INFO_STREAM(get_logger(),"dist"<<dist);
+            // }
+          }
+        }
+      }
+      if(dist < 0.11999999731779099){
+        dist = 0.0;
+      }
+
+      laser.ranges.push_back(dist);
+    }
     laser_pub->publish(laser);
+  }
+
+  /// \brief distance between two points
+  /// \param x1 the x position of the first point
+  /// \param y1 the y position of the first point
+  /// \param x2 the x position of the second point
+  /// \param y2 the y position of the second point
+  /// \return the distance between the two points
+  double distance(double x1, double y1, double x2, double y2){
+    return  std::sqrt(std::pow((x2-x1),2) +std::pow((y2-y1),2));
   }
 
   /// @brief random number generator
@@ -361,6 +471,7 @@ private:
   /// @brief fake obstacle publisher
   void fake_timer_callback()
   {
+    publish_laser();
     visualization_msgs::msg::MarkerArray fake_obs = visualization_msgs::msg::MarkerArray();
     visualization_msgs::msg::Marker fake_cyl = visualization_msgs::msg::Marker();
     fake_cyl.header.stamp = this->get_clock()->now();
@@ -402,19 +513,18 @@ private:
   /// \brief Creates a timer to publish frames and timestep
   void timer_callback()
   {
+    
     // RCLCPP_ERROR_STREAM(this->get_logger(),"x0"<<tr.translation().x);
     auto time_msg = std_msgs::msg::UInt64();
     count_++;
     time_msg.data = count_;
     publisher_timestep->publish(time_msg);
-
     red_sensor.stamp = this->get_clock()->now();
-
     red_path.header.stamp = this->get_clock()->now();
 
     t.header.stamp = this->get_clock()->now();
     ps.header.stamp = this->get_clock()->now();
-    laser.header.stamp = this->get_clock()->now();
+    
 
     sensor_pub->publish(red_sensor);
 
