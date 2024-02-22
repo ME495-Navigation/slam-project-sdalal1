@@ -82,9 +82,13 @@ public:
     declare_parameter("track_width", 0.0);
     declare_parameter("collision_radius", 0.11);
     declare_parameter("input_noise", 0.01);
-    declare_parameter("slip_fraction", 0.01);
+    declare_parameter("slip_fraction", 0.1);
     declare_parameter("basic_sensor_variance", 0.01);
     declare_parameter("max_range", 1.0);
+    declare_parameter("laser_mainimim_range", 0.12);
+    declare_parameter("laser_maximum_range", 2 * turtlelib::PI);
+    declare_parameter("laser_angle_increment", 0.01745329238474369);
+    declare_parameter("laser_noise_variance", 0.001);
 
     rate = get_parameter("rate").as_double();
     x0 = get_parameter("x0").as_double();
@@ -103,6 +107,10 @@ public:
     basic_sensor_variance_ = get_parameter("basic_sensor_variance").as_double();
     max_range_ = get_parameter("max_range").as_double();
     collision_radius_ = get_parameter("collision_radius").as_double();
+    laser_mainimim_range_ = get_parameter("laser_mainimim_range").as_double();
+    laser_maximum_range_ = get_parameter("laser_maximum_range").as_double();
+    laser_angle_increment_ = get_parameter("laser_angle_increment").as_double();
+    laser_noise_variance_ = get_parameter("laser_noise_variance").as_double();
 
     timer_ = create_wall_timer(
       1000ms / rate, std::bind(&Nusim::timer_callback, this));
@@ -204,6 +212,12 @@ private:
   double basic_sensor_variance_ = 0.0;
   double max_range_ = 0.0;
   double collision_radius_ = 0.0;
+  double laser_mainimim_range_ = 0.0;
+  double laser_maximum_range_ = 2 * turtlelib::PI;
+  double laser_angle_increment_ = 0.01745329238474369;
+  double laser_noise_variance_ = 0.0;
+  bool draw_only = false;
+
   double x_robot = 0.0;
   double y_robot = 0.0;
   double theta_robot = 0.0;
@@ -407,41 +421,16 @@ private:
               auto d = std::sqrt(std::pow(d1,2)-std::pow(p_dist,2))- std::sqrt(std::pow(obs_r,2)-std::pow(p_dist,2));
               dist = std::min(dist,d);
             }
-            // auto dx = test.x - diff->get_transformation().translation().x;
-            // auto dy = test.y - diff->get_transformation().translation().y;
-            // auto dr = std::sqrt(dx * dx + dy * dy);
-            // auto D = (test.x * diff->get_transformation().translation().y) - (diff->get_transformation().translation().x * test.y);
-            
-            // auto delta = (obs_r * obs_r * dr * dr) - (D * D);
-            // if (delta >= 0.0){
-            //   auto sgn = (dy < 0.0) ? -1 : 1;
-            //   auto x1 = (D * dy + sgn * dx * std::sqrt(delta))/(dr * dr);
-            //   auto x2 = (D * dy - sgn * dx * std::sqrt(delta))/(dr * dr);
-            //   auto y1 = (-D * dx + std::abs(dy) * std::sqrt(delta))/(dr * dr);
-            //   auto y2 = (-D * dx - std::abs(dy) * std::sqrt(delta))/(dr * dr);
-            //   auto v3 = diff->get_transformation()(turtlelib::Point2D{x1,y1});
-            //   auto v4 = diff->get_transformation()(turtlelib::Point2D{x2,y2});
-            //   // auto d1 = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
-            //   // auto d2 = turtlelib::magnitude(turtlelib::Vector2D{v4.x,v4.y});
-            //   // auto v3 = turtlelib::Point2D{x1,y1};
-            //   // auto v4 = turtlelib::Point2D{x2,y2};
-            //   auto d1 = distance(v3.x,v3.y,0.0,0.0);
-            //   auto d2 = distance(v4.x,v4.y,0.0,0.0);
-            //   // auto d1 = distance(diff->get_transformation().translation().x,diff->get_transformation().translation().y,v3.x,v3.y);
-            //   // auto d2 = distance(diff->get_transformation().translation().x,diff->get_transformation().translation().y,v4.x,v4.y);
-            //   dist = std::min(mag,d1);
-            //   dist = std::min(dist,d2);
-            //   RCLCPP_INFO_STREAM(get_logger(),"d1"<<d1<<"d2"<<d2);
-            //   RCLCPP_INFO_STREAM(get_logger(),"dist"<<dist);
-            // }
           }
         }
       }
-      if(dist < 0.11999999731779099){
+      if(dist < laser.range_min){
         dist = 0.0;
       }
+      std::normal_distribution<> d1(0.0, laser_noise_variance_);
+      auto laser_noise = d1(get_random());
 
-      laser.ranges.push_back(dist);
+      laser.ranges.push_back(dist + laser_noise);
     }
     laser_pub->publish(laser);
   }
@@ -525,8 +514,8 @@ private:
     t.header.stamp = this->get_clock()->now();
     ps.header.stamp = this->get_clock()->now();
     
-
     sensor_pub->publish(red_sensor);
+    
 
     tf_broadcaster_->sendTransform(t);
   }
@@ -559,24 +548,22 @@ private:
     auto right_wheel_velocity = (msg->right_velocity * motor_cmd_per_rad_sec_ / rate);
     std::normal_distribution<> d(0.0, input_noise_);
     auto noise = d(get_random());
+    std::uniform_real_distribution<> slip_noise{-slip_fraction_, slip_fraction_};
 
-    auto slip_noise = std::uniform_real_distribution<>{-slip_fraction_, slip_fraction_};
-
-    if (left_wheel_velocity != 0) {
+    if (left_wheel_velocity != 0.0) {
 
       left_wheel_velocity += noise;
     }
-    if (right_wheel_velocity != 0) {
+    if (right_wheel_velocity != 0.0) {
       right_wheel_velocity += noise;
     }
-    left_wheel += left_wheel_velocity;
-    right_wheel += right_wheel_velocity;
+    left_wheel += (left_wheel_velocity * 652.229299363);
+    right_wheel += (right_wheel_velocity * 652.229299363);
 
-    red_sensor.left_encoder = left_wheel * 652.229299363;
-    red_sensor.right_encoder = right_wheel * 652.229299363;
+    red_sensor.left_encoder = left_wheel;
+    red_sensor.right_encoder = right_wheel;
 
     auto slipping_noise = (1 + slip_noise(get_random()));
-
     diff->compute_fk(
       slipping_noise * left_wheel_velocity,
       slipping_noise * right_wheel_velocity);
@@ -599,7 +586,6 @@ private:
     ps.pose.orientation.y = q_red.y();
     ps.pose.orientation.z = q_red.z();
     ps.pose.orientation.w = q_red.w();
-
     red_path.poses.push_back(ps);
     red_path_pub->publish(red_path);
 
