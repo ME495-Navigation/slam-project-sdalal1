@@ -1,0 +1,5 @@
+ Some tests fail
+
+Robot fails the .1m/s 1/m in 10 seconds test, it moves far too slowly
+given that your fvideo seems to show working odometry it appears this might be a simulation issue.
+

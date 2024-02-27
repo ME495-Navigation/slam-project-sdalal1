@@ -46,6 +46,7 @@ void DiffDrive::change_transform(Transform2D tr){
 void DiffDrive::compute_fk(double l_prime, double r_prime)
 {
     //part of formula taken from Modern robotics 13.15
+    // const 
     auto phi = (wheel_radius/wheel_track) * (r_prime - l_prime); //Equation 3 from Kinematics.pdf
     auto x_dot = (wheel_radius/2) * (l_prime+r_prime); //Equation 4 from kinematics.pdf
     
