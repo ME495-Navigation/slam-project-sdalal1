@@ -565,13 +565,14 @@ private:
   /// \param the message to get published wheel commands
   void red_wheel_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg)
   {
-    auto left_wheel_velocity = (msg->left_velocity * motor_cmd_per_rad_sec_ / rate);
-    auto right_wheel_velocity = (msg->right_velocity * motor_cmd_per_rad_sec_ / rate);
+    auto left_wheel_velocity = static_cast<double>(msg->left_velocity) * motor_cmd_per_rad_sec_ / rate;
+    auto right_wheel_velocity = static_cast<double>(msg->right_velocity) * motor_cmd_per_rad_sec_ / rate;
     // auto left_wheel_velocity = (msg->left_velocity);
     // auto right_wheel_velocity = (msg->right_velocity);
     std::normal_distribution<> d(0.0, input_noise_);
     auto noise = d(get_random());
     std::uniform_real_distribution<> slip_noise{-slip_fraction_, slip_fraction_};
+    auto slipping_noise = (1 + slip_noise(get_random()));
 
     if (left_wheel_velocity != 0.0) {
 
@@ -580,6 +581,9 @@ private:
     if (right_wheel_velocity != 0.0) {
       right_wheel_velocity += noise;
     }
+    diff->compute_fk(
+      left_wheel_velocity * slipping_noise,
+      right_wheel_velocity * slipping_noise);
     // auto left_wait = left_wheel_velocity * motor_cmd_per_rad_sec_ / rate;
     // auto right_wait = right_wheel_velocity * motor_cmd_per_rad_sec_ / rate;
     // diff->compute_fk(left_wait, right_wait);
@@ -588,16 +592,12 @@ private:
     // right_wheel += (right_wheel_velocity * 652.229299363);
     left_wheel += (left_wheel_velocity * 652.229299363);
     right_wheel += (right_wheel_velocity * 652.229299363);
-    diff->compute_fk(
-      left_wheel_velocity,
-      right_wheel_velocity);
+    
     // left_wheel += left_wait * 652.229299363;
     // right_wheel += right_wait * 652.229299363;
 
-    auto slipping_noise = (1 + slip_noise(get_random()));
-
-    red_sensor.left_encoder = left_wheel * slipping_noise;
-    red_sensor.right_encoder = right_wheel * slipping_noise;
+    red_sensor.left_encoder = left_wheel;
+    red_sensor.right_encoder = right_wheel; 
 
     // diff->compute_fk(
     //   slipping_noise * left_wheel_velocity,

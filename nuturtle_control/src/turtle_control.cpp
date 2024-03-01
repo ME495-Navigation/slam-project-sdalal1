@@ -105,8 +105,8 @@ private:
     turtlelib::Twist2D twist{a, lx, ly};
     const auto wheel_angle = diff.compute_ik(twist);
     auto pub_wheel = nuturtlebot_msgs::msg::WheelCommands();
-    pub_wheel.left_velocity = wheel_angle.left / motor_cmd_per_rad_sec_;
-    pub_wheel.right_velocity = wheel_angle.right / motor_cmd_per_rad_sec_;
+    pub_wheel.left_velocity = static_cast<int>(wheel_angle.left / motor_cmd_per_rad_sec_);
+    pub_wheel.right_velocity = static_cast<int>(wheel_angle.right / motor_cmd_per_rad_sec_);
 
     if (pub_wheel.left_velocity > motor_cmd_max_) {
       pub_wheel.left_velocity = motor_cmd_max_;
@@ -134,8 +134,8 @@ private:
     auto current_time = msg->stamp;
     js_pub.header.stamp = current_time;
     js_pub.name = {"wheel_left_joint", "wheel_right_joint"};
-    auto left_joint = (left_en) / encoder_ticks_per_rad_;
-    auto right_joint = (right_en) / encoder_ticks_per_rad_;
+    auto left_joint = static_cast<double>(left_en) / encoder_ticks_per_rad_;
+    auto right_joint = static_cast<double>(right_en) / encoder_ticks_per_rad_;
 
     js_pub.position = std::vector<double>(2);
     js_pub.position.at(0) = left_joint;
@@ -146,7 +146,7 @@ private:
       auto old_right_en = old_sensor_data.right_encoder;
       auto last_timestamp = old_sensor_data.stamp.nanosec;
 
-      auto dt = (current_time.nanosec - last_timestamp) * (1e-9);
+      auto dt = (current_time.nanosec - last_timestamp) * (1e-9) + (current_time.sec - old_sensor_data.stamp.sec);
       js_pub.velocity = std::vector<double>(2);
       js_pub.velocity.at(0) = (left_en - old_left_en) / (dt * encoder_ticks_per_rad_);
       js_pub.velocity.at(1) = (right_en - old_right_en) / (dt * encoder_ticks_per_rad_);
