@@ -81,10 +81,10 @@ public:
     declare_parameter("wheel_radius", 0.0);
     declare_parameter("track_width", 0.0);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("input_noise", 0.0);
-    declare_parameter("slip_fraction", 0.0);
-    declare_parameter("basic_sensor_variance", 0.00);
-    declare_parameter("max_range", 2.5);
+    declare_parameter("input_noise", 0.0001);
+    declare_parameter("slip_fraction", 0.0001);
+    declare_parameter("basic_sensor_variance", 0.01);
+    declare_parameter("max_range", 1.1);
     declare_parameter("laser_mainimim_range", 0.12);
     declare_parameter("laser_maximum_range", 2 * turtlelib::PI);
     declare_parameter("laser_angle_increment", 0.01745329238474369);

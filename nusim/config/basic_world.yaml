@@ -3,8 +3,8 @@
     x0: 0.0
     y0: 0.0
     theta0: 0.0
-    obstacle/x: [-0.5,0.8,0.4]
-    obstacle/y: [-0.7,-0.8,0.8]
+    obstacle/x: [-0.5,0.8,0.4,0.5]
+    obstacle/y: [-0.7,-0.8,0.8,0.3]
     obstacle/r: 0.038
     arena_x_length: 4.0
     arena_y_length: 4.0
