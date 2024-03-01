@@ -81,10 +81,10 @@ public:
     declare_parameter("wheel_radius", 0.0);
     declare_parameter("track_width", 0.0);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("input_noise", 0.01);
-    declare_parameter("slip_fraction", 0.1);
-    declare_parameter("basic_sensor_variance", 0.01);
-    declare_parameter("max_range", 1.0);
+    declare_parameter("input_noise", 0.0);
+    declare_parameter("slip_fraction", 0.0);
+    declare_parameter("basic_sensor_variance", 0.00);
+    declare_parameter("max_range", 2.5);
     declare_parameter("laser_mainimim_range", 0.12);
     declare_parameter("laser_maximum_range", 2 * turtlelib::PI);
     declare_parameter("laser_angle_increment", 0.01745329238474369);
@@ -424,7 +424,7 @@ private:
           }
         }
       }
-      if(dist < laser.range_min){
+      if(dist < laser.range_min || dist >= laser.range_max){
         dist = 0.0;
       }
       std::normal_distribution<> d1(0.0, laser_noise_variance_);
@@ -477,9 +477,10 @@ private:
             obs_y[i] - diff->get_transformation().translation().y,
             2)) > (max_range_ - obs_r - collision_radius_))
       {
+        fake_cyl.id = i;
         fake_cyl.action = visualization_msgs::msg::Marker::DELETE;
       } else {
-        fake_cyl.id = i + 10;
+        fake_cyl.id = i;
         fake_cyl.scale.x = noise_fake + (obs_r * 2);
         fake_cyl.scale.y = noise_fake + (obs_r * 2);
         fake_cyl.scale.z = 0.25;
@@ -546,6 +547,8 @@ private:
   {
     auto left_wheel_velocity = (msg->left_velocity * motor_cmd_per_rad_sec_ / rate);
     auto right_wheel_velocity = (msg->right_velocity * motor_cmd_per_rad_sec_ / rate);
+    // auto left_wheel_velocity = (msg->left_velocity);
+    // auto right_wheel_velocity = (msg->right_velocity);
     std::normal_distribution<> d(0.0, input_noise_);
     auto noise = d(get_random());
     std::uniform_real_distribution<> slip_noise{-slip_fraction_, slip_fraction_};
@@ -557,16 +560,28 @@ private:
     if (right_wheel_velocity != 0.0) {
       right_wheel_velocity += noise;
     }
-    left_wheel += (left_wheel_velocity * 652.229299363);
-    right_wheel += (right_wheel_velocity * 652.229299363);
+    // auto left_wait = left_wheel_velocity * motor_cmd_per_rad_sec_ / rate;
+    // auto right_wait = right_wheel_velocity * motor_cmd_per_rad_sec_ / rate;
+    // diff->compute_fk(left_wait, right_wait);
 
-    red_sensor.left_encoder = left_wheel;
-    red_sensor.right_encoder = right_wheel;
+    // left_wheel += (left_wheel_velocity * 652.229299363);
+    // right_wheel += (right_wheel_velocity * 652.229299363);
+    left_wheel += (left_wheel_velocity  * 652.229299363);
+    right_wheel += (right_wheel_velocity  * 652.229299363);
+    diff->compute_fk(
+      left_wheel_velocity,
+      right_wheel_velocity);
+    // left_wheel += left_wait * 652.229299363;
+    // right_wheel += right_wait * 652.229299363;
 
     auto slipping_noise = (1 + slip_noise(get_random()));
-    diff->compute_fk(
-      slipping_noise * left_wheel_velocity,
-      slipping_noise * right_wheel_velocity);
+
+    red_sensor.left_encoder = left_wheel * slipping_noise;
+    red_sensor.right_encoder = right_wheel * slipping_noise;
+
+    // diff->compute_fk(
+    //   slipping_noise * left_wheel_velocity,
+    //   slipping_noise * right_wheel_velocity);
 
     check_collision();
     auto trans_red = diff->get_transformation();
@@ -594,15 +609,14 @@ private:
   void check_collision()
   {
     for (int i = 0; i < int(obs_x.size()); i++) {
-      if (std::sqrt(
-          std::pow(
-            obs_x[i] - diff->get_transformation().translation().x,
-            2) +
-          std::pow(
-            obs_y[i] - diff->get_transformation().translation().y,
-            2)) < (obs_r + collision_radius_))
+      auto distance = std::sqrt(std::pow(obs_x.at(i) - diff->get_transformation().translation().x,2) +std::pow(obs_y.at(i) - diff->get_transformation().translation().y,2));
+      if (distance < (obs_r + collision_radius_))
       {
-        turtlelib::Transform2D tr{turtlelib::Vector2D{x_robot, y_robot}, theta_robot};
+        auto u_x =  (diff->get_transformation().translation().x -obs_x.at(i)) / distance;
+        auto u_y =  (diff->get_transformation().translation().y -obs_y.at(i)) / distance;
+        auto x_new = x_robot + (obs_r + collision_radius_-distance) * u_x;
+        auto y_new = y_robot + (obs_r + collision_radius_-distance) * u_y;
+        turtlelib::Transform2D tr{turtlelib::Vector2D{x_new, y_new}, theta_robot};
         diff->change_transform(tr);
         return;
       }

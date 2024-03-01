@@ -19,11 +19,11 @@ DiffDrive::DiffDrive(Transform2D t, double track, double radius){
     twist = Twist2D{0.0,0.0,0.0};
 }
 
-wheel_positions DiffDrive::get_wheel_angle(){
+wheel_positions DiffDrive::get_wheel_angle()const{
     return psi;
 }
 
-Transform2D DiffDrive::get_transformation(){
+Transform2D DiffDrive::get_transformation() const{
     return trans;
 }
 
@@ -46,7 +46,7 @@ void DiffDrive::change_transform(Transform2D tr){
 void DiffDrive::compute_fk(double l_prime, double r_prime)
 {
     //part of formula taken from Modern robotics 13.15
-    auto phi = (wheel_radius/wheel_track) * (r_prime - l_prime); //Equation 3 from Kinematics.pdf
+    const auto phi = (wheel_radius/wheel_track) * (r_prime - l_prime); //Equation 3 from Kinematics.pdf
     auto x_dot = (wheel_radius/2) * (l_prime+r_prime); //Equation 4 from kinematics.pdf
     
     auto y_dot = 0.0;
@@ -62,6 +62,8 @@ void DiffDrive::compute_fk(double l_prime, double r_prime)
 
     trans *= t_new; //changing it back to body frame
 }
+
+
 
 wheel_positions DiffDrive::compute_ik(Twist2D twi){
     if(almost_equal(twi.y,0)){

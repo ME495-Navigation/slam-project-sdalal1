@@ -21,6 +21,7 @@ namespace turtlelib
         double right;
     };
 
+
     /// \brief The diff drive kinematics
     class DiffDrive{
         public:
@@ -38,11 +39,11 @@ namespace turtlelib
 
         /// \brief get the wheen angle of the memeber
         /// \return the wheel angle
-        wheel_positions get_wheel_angle();
+        wheel_positions get_wheel_angle() const;
 
         /// \brief to get current transformation of the robot
         /// \return the current transformation of the member
-        Transform2D get_transformation();
+        Transform2D get_transformation() const;
 
         /// \brief Get the wheel radius
         /// \return returns a wheel radius
@@ -69,6 +70,8 @@ namespace turtlelib
         /// \param twi The twist to be achieved
         /// \return The wheel velocities of bot
         wheel_positions compute_ik(Twist2D twi);
+
+
 
         private:
         /// \brief The wheel position of the robot

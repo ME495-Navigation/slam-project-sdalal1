@@ -3,14 +3,14 @@
   <arg name="cmd_src" default="circle"/>
   <arg name="robot" default="nusim"/>
   <arg name="use_rviz" default="true"/>
+  <arg name="rviz_config" default="$(find-pkg-share nuturtle_control)/config/control_blue_red.rviz"/>
 
 
 <!-- red and blue launch configuration -->
 <node pkg="rviz2" exec="rviz2" name="rviz2" 
 if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"
 
-args="-d $(find-pkg-share nuturtle_control)/config/control_blue_red.rviz"/>   
-
+args="-d $(var rviz_config)"/>
 <!-- blue launch configuration -->
 
 <!-- Begin_Citation [10] for conditionals in node, used reference -->
@@ -67,7 +67,7 @@ Mainly used it for debugging the syntax for and's and or's [11]-->
 <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' == \'localhost\'')">
     <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
     <param name="body_id" value="blue/base_footprint"/>
-    <param name="odom_id" value="odom"/>
+    <param name="odom_id" value="blue/odom"/>
     <param name="wheel_left" value="wheel_left_joint"/>
     <param name="wheel_right" value="wheel_right_joint"/>
     <remap from="joint_states" to="blue/joint_states"/>
@@ -77,11 +77,11 @@ Mainly used it for debugging the syntax for and's and or's [11]-->
 <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' == \'nusim\'')">
     <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
     <param name="body_id" value="blue/base_footprint"/>
-    <param name="odom_id" value="odom"/>
+    <param name="odom_id" value="blue/odom"/>
     <param name="wheel_left" value="wheel_left_joint"/>
     <param name="wheel_right" value="wheel_right_joint"/>
     <remap from="joint_states" to="red/joint_states"/>
-
+    <remap from="odom" to="blue/odom"/>
 </node>
 
 <node pkg="nuturtle_control" exec="turtle_control" if="$(eval '\'$(var robot)\' == \'localhost\'')">
@@ -92,7 +92,7 @@ Mainly used it for debugging the syntax for and's and or's [11]-->
 <node pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
 
 <!-- <node pkg="tf2_ros" if="$(eval '\'$(var robot)\' != \'none\'')" exec="static_transform_publisher" args="0 0 0 0 0 0 nusim/world odom"/> -->
-<node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 nusim/world odom"/>
+<node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 nusim/world blue/odom"/>
 
 
 <node pkg="hls_lfcd_lds_driver" exec="hlds_laser_publisher" if="$(eval '\'$(var robot)\' == \'localhost\'')">
