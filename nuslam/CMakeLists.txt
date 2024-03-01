@@ -26,14 +26,15 @@ find_package(rosidl_default_generators REQUIRED)
 # find_package(<dependency> REQUIRED)
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 add_executable(slam src/slam.cpp)
-ament_target_dependencies(slam turtlelib rclcpp std_srvs nuturtle_control geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros visualization_msgs)
+ament_target_dependencies(slam turtlelib rclcpp std_srvs
+nuturtle_control geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros visualization_msgs)
 target_link_libraries(slam turtlelib::turtlelib "${cpp_typesupport_target}" ${ARMADILLO_LIBRARIES})
 
 install(TARGETS
   slam
   DESTINATION lib/${PROJECT_NAME})
 
-install (DIRECTORY
+install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )

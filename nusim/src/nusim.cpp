@@ -198,8 +198,8 @@ private:
   double arena_x_length = 0.0;
   double arena_y_length = 0.0;
   double obs_r = 0.0;
-  std::vector<double> obs_x = {-0.5,0.8,0.4};
-  std::vector<double> obs_y = {-0.7,-0.8,0.8};
+  std::vector<double> obs_x = {-0.5, 0.8, 0.4};
+  std::vector<double> obs_y = {-0.7, -0.8, 0.8};
 
   double left_wheel = 0.0;
   double right_wheel = 0.0;
@@ -371,60 +371,79 @@ private:
     laser.range_min = 0.11999999731779099;
     laser.range_max = 3.5;
     laser.ranges.clear();
-    for(double i = laser.angle_min; i < laser.angle_max ; i += laser.angle_increment){
+    for (double i = laser.angle_min; i < laser.angle_max; i += laser.angle_increment) {
       auto x_lidar_max = laser.range_max * std::cos(i);
       auto y_lidar_max = laser.range_max * std::sin(i);
-      turtlelib::Point2D v1{x_lidar_max,y_lidar_max};
-      double dist =  laser.range_max;
+      turtlelib::Point2D v1{x_lidar_max, y_lidar_max};
+      double dist = laser.range_max;
       double mag = laser.range_max;
       auto v2 = diff->get_transformation()(v1);
       auto test = diff->get_transformation()(v1);
-      auto slope = (v2.y - diff->get_transformation().translation().y)/(v2.x - diff->get_transformation().translation().x);
-      auto con = diff->get_transformation().translation().y - slope * diff->get_transformation().translation().x;
-      
-      if (v2.y > arena_y_length/2){
-        v2.y = arena_y_length/2;
-        v2.x = (arena_y_length/2 - con)/slope;
+      auto slope = (v2.y - diff->get_transformation().translation().y) /
+        (v2.x - diff->get_transformation().translation().x);
+      auto con = diff->get_transformation().translation().y - slope *
+        diff->get_transformation().translation().x;
+
+      if (v2.y > arena_y_length / 2) {
+        v2.y = arena_y_length / 2;
+        v2.x = (arena_y_length / 2 - con) / slope;
         auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
-        dist = std::min(dist,mag);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+        dist = std::min(dist, mag);
       }
-      if (v2.x < -arena_x_length/2){
-        v2.x = -arena_x_length/2;
-        v2.y = (slope * -arena_x_length/2) + con;
+      if (v2.x < -arena_x_length / 2) {
+        v2.x = -arena_x_length / 2;
+        v2.y = (slope * -arena_x_length / 2) + con;
         auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
-        dist = std::min(dist,mag);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+        dist = std::min(dist, mag);
       }
-      if (v2.y < -arena_y_length/2){
-        v2.y = -arena_y_length/2;
-        v2.x = (-arena_y_length/2 - con)/slope;
+      if (v2.y < -arena_y_length / 2) {
+        v2.y = -arena_y_length / 2;
+        v2.x = (-arena_y_length / 2 - con) / slope;
         auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
-        dist = std::min(dist,mag);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+        dist = std::min(dist, mag);
       }
-      if (v2.x > arena_x_length/2){
-        v2.x = arena_x_length/2;
-        v2.y = (arena_x_length/2 * slope)+ con;
+      if (v2.x > arena_x_length / 2) {
+        v2.x = arena_x_length / 2;
+        v2.y = (arena_x_length / 2 * slope) + con;
         auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x,v3.y});
-        dist = std::min(dist,mag);
+        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+        dist = std::min(dist, mag);
       }
       for (int j = 0; j < int(obs_x.size()); j++) {
-        if(distance(obs_x[j],obs_y[j],diff->get_transformation().translation().x,diff->get_transformation().translation().y) < mag){
+        if (distance(
+            obs_x[j], obs_y[j], diff->get_transformation().translation().x,
+            diff->get_transformation().translation().y) < mag)
+        {
           auto p_dist = abs(slope * obs_x[j] - obs_y[j] + con) / std::sqrt(slope * slope + 1);
-          if(p_dist <= obs_r){
-            double d1 = distance(obs_x[j],obs_y[j],diff->get_transformation().translation().x,diff->get_transformation().translation().y);
-            double d2 = distance(obs_x[j],obs_y[j],test.x,test.y);
+          if (p_dist <= obs_r) {
+            double d1 = distance(
+              obs_x[j], obs_y[j],
+              diff->get_transformation().translation().x,
+              diff->get_transformation().translation().y);
+            double d2 = distance(obs_x[j], obs_y[j], test.x, test.y);
 
-            if(turtlelib::almost_equal(std::sqrt(std::pow(d1,2)-std::pow(p_dist,2))+ std::sqrt(std::pow(d2,2)-std::pow(p_dist,2)), mag)){
-              auto d = std::sqrt(std::pow(d1,2)-std::pow(p_dist,2))- std::sqrt(std::pow(obs_r,2)-std::pow(p_dist,2));
-              dist = std::min(dist,d);
+            if (turtlelib::almost_equal(
+                std::sqrt(
+                  std::pow(
+                    d1,
+                    2) - std::pow(p_dist, 2)) + std::sqrt(std::pow(d2, 2) - std::pow(p_dist, 2)),
+                mag))
+            {
+              auto d =
+                std::sqrt(std::pow(d1, 2) - std::pow(p_dist, 2)) - std::sqrt(
+                std::pow(
+                  obs_r,
+                  2) -
+                std::pow(p_dist, 2));
+              dist = std::min(dist, d);
             }
           }
         }
       }
-      if(dist < laser.range_min || dist >= laser.range_max){
+      if (dist < laser.range_min || dist >= laser.range_max) {
         dist = 0.0;
       }
       std::normal_distribution<> d1(0.0, laser_noise_variance_);
@@ -441,8 +460,9 @@ private:
   /// \param x2 the x position of the second point
   /// \param y2 the y position of the second point
   /// \return the distance between the two points
-  double distance(double x1, double y1, double x2, double y2){
-    return  std::sqrt(std::pow((x2-x1),2) +std::pow((y2-y1),2));
+  double distance(double x1, double y1, double x2, double y2)
+  {
+    return std::sqrt(std::pow((x2 - x1), 2) + std::pow((y2 - y1), 2));
   }
 
   /// @brief random number generator
@@ -503,7 +523,7 @@ private:
   /// \brief Creates a timer to publish frames and timestep
   void timer_callback()
   {
-    
+
     // RCLCPP_ERROR_STREAM(this->get_logger(),"x0"<<tr.translation().x);
     auto time_msg = std_msgs::msg::UInt64();
     count_++;
@@ -514,9 +534,9 @@ private:
 
     t.header.stamp = this->get_clock()->now();
     ps.header.stamp = this->get_clock()->now();
-    
+
     sensor_pub->publish(red_sensor);
-    
+
 
     tf_broadcaster_->sendTransform(t);
   }
@@ -566,8 +586,8 @@ private:
 
     // left_wheel += (left_wheel_velocity * 652.229299363);
     // right_wheel += (right_wheel_velocity * 652.229299363);
-    left_wheel += (left_wheel_velocity  * 652.229299363);
-    right_wheel += (right_wheel_velocity  * 652.229299363);
+    left_wheel += (left_wheel_velocity * 652.229299363);
+    right_wheel += (right_wheel_velocity * 652.229299363);
     diff->compute_fk(
       left_wheel_velocity,
       right_wheel_velocity);
@@ -609,13 +629,16 @@ private:
   void check_collision()
   {
     for (int i = 0; i < int(obs_x.size()); i++) {
-      auto distance = std::sqrt(std::pow(obs_x.at(i) - diff->get_transformation().translation().x,2) +std::pow(obs_y.at(i) - diff->get_transformation().translation().y,2));
-      if (distance < (obs_r + collision_radius_))
-      {
-        auto u_x =  (diff->get_transformation().translation().x -obs_x.at(i)) / distance;
-        auto u_y =  (diff->get_transformation().translation().y -obs_y.at(i)) / distance;
-        auto x_new = x_robot + (obs_r + collision_radius_-distance) * u_x;
-        auto y_new = y_robot + (obs_r + collision_radius_-distance) * u_y;
+      auto distance = std::sqrt(
+        std::pow(
+          obs_x.at(
+            i) - diff->get_transformation().translation().x,
+          2) + std::pow(obs_y.at(i) - diff->get_transformation().translation().y, 2));
+      if (distance < (obs_r + collision_radius_)) {
+        auto u_x = (diff->get_transformation().translation().x - obs_x.at(i)) / distance;
+        auto u_y = (diff->get_transformation().translation().y - obs_y.at(i)) / distance;
+        auto x_new = x_robot + (obs_r + collision_radius_ - distance) * u_x;
+        auto y_new = y_robot + (obs_r + collision_radius_ - distance) * u_y;
         turtlelib::Transform2D tr{turtlelib::Vector2D{x_new, y_new}, theta_robot};
         diff->change_transform(tr);
         return;

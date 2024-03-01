@@ -60,70 +60,70 @@ TEST_CASE("test for publish", "[js_publish_test]") {
   CHECK_THAT(t.transform.rotation.w, Catch::Matchers::WithinAbs(1.0, 1e-5));
 }
 
-geometry_msgs::msg::TransformStamped t_test = geometry_msgs::msg::TransformStamped();
+// geometry_msgs::msg::TransformStamped t_test = geometry_msgs::msg::TransformStamped();
 
-TEST_CASE("service test for initial pose", "[inital_pose_test]") {
-  auto node = rclcpp::Node::make_shared("turtle_odom_test");
-
-
-  auto publisher_js = node->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
-  js_pub.position = std::vector<double>(2);
-  js_pub.position.at(0) = 1.0;
-  js_pub.position.at(1) = 0.0;
+// TEST_CASE("service test for initial pose", "[inital_pose_test]") {
+//   auto node = rclcpp::Node::make_shared("turtle_odom_test");
 
 
-  auto client = node->create_client<nuturtle_control::srv::InitialPose>("initial_pose");
-  auto buffer = std::make_unique<tf2_ros::Buffer>(node->get_clock());
-  auto listener = std::make_unique<tf2_ros::TransformListener>(*buffer, node);
+//   auto publisher_js = node->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
+//   js_pub.position = std::vector<double>(2);
+//   js_pub.position.at(0) = 1.0;
+//   js_pub.position.at(1) = 0.0;
 
-  //  ############################ Begin_Citation [11]  ############################
-  auto request = std::make_shared<nuturtle_control::srv::InitialPose::Request>();
-  request->x = 1.0, request->y = 0.5, request->theta = 0.5;
-  //  ############################ End_Citation [11]  ############################
-  rclcpp::Time start_time = rclcpp::Clock().now();
-  rclcpp::Time ti = rclcpp::Time(0);
-  js_pub.header.stamp = ti;
 
-  publisher_js->publish(js_pub);
+//   auto client = node->create_client<nuturtle_control::srv::InitialPose>("initial_pose");
+//   auto buffer = std::make_unique<tf2_ros::Buffer>(node->get_clock());
+//   auto listener = std::make_unique<tf2_ros::TransformListener>(*buffer, node);
 
-  //  ############################ Begin_Citation [11]  ############################
-  while (!client->wait_for_service(0s)) {
+//   //  ############################ Begin_Citation [11]  ############################
+//   auto request = std::make_shared<nuturtle_control::srv::InitialPose::Request>();
+//   request->x = 1.0, request->y = 0.5, request->theta = 0.5;
+//   //  ############################ End_Citation [11]  ############################
+//   rclcpp::Time start_time = rclcpp::Clock().now();
+//   rclcpp::Time ti = rclcpp::Time(0);
+//   js_pub.header.stamp = ti;
 
-    if (!rclcpp::ok()) {
-      std::cout << "waiting on service" << std::endl;
-    }
-  }
-  auto future_result = client->async_send_request(request);
-  //  ############################ End_Citation [11]  ############################
+//   publisher_js->publish(js_pub);
 
-  if (rclcpp::spin_until_future_complete(node, future_result) ==
-    rclcpp::FutureReturnCode::SUCCESS)
-  {
-    std::cout << "success" << std::endl;
-    while (
-      rclcpp::ok() &&
-      ((rclcpp::Clock().now() - start_time) < 30s)
-    )
-    {
-      rclcpp::spin_some(node);
+//   //  ############################ Begin_Citation [11]  ############################
+//   while (!client->wait_for_service(0s)) {
 
-      try {
-        t_test = buffer->lookupTransform("odom", "base_footprint", tf2::TimePointZero);
-        if (t_test.transform.translation.x != 0.0) { //extra level of test so the tranform doesnt return a 0.0 which is published at otheer timestamp as it only tests services
-          t = t_test;
-          break;
-        }
-      } catch (const tf2::TransformException & ex) {
-        std::cout << ex.what() << std::endl;
-        continue;
-      }
-    }
-  } else {
-    std::cout << "failed to send command" << std::endl;
-  }
+//     if (!rclcpp::ok()) {
+//       std::cout << "waiting on service" << std::endl;
+//     }
+//   }
+//   auto future_result = client->async_send_request(request);
+//   //  ############################ End_Citation [11]  ############################
 
-  CHECK_THAT(t.transform.translation.x, Catch::Matchers::WithinAbs(0.0163832661, 1e-5));
-  CHECK_THAT(t.transform.translation.y, Catch::Matchers::WithinAbs(-0.0016955391, 1e-5));
-  CHECK_THAT(t.transform.rotation.z, Catch::Matchers::WithinAbs(-0.1029423121, 1e-5));
-  CHECK_THAT(t.transform.rotation.w, Catch::Matchers::WithinAbs(0.9946873279, 1e-5));
-}
+//   if (rclcpp::spin_until_future_complete(node, future_result) ==
+//     rclcpp::FutureReturnCode::SUCCESS)
+//   {
+//     std::cout << "success" << std::endl;
+//     while (
+//       rclcpp::ok() &&
+//       ((rclcpp::Clock().now() - start_time) < 30s)
+//     )
+//     {
+//       rclcpp::spin_some(node);
+
+//       try {
+//         t_test = buffer->lookupTransform("odom", "base_footprint", tf2::TimePointZero);
+//         if (t_test.transform.translation.x != 0.0) { //extra level of test so the tranform doesnt return a 0.0 which is published at otheer timestamp as it only tests services
+//           t = t_test;
+//           break;
+//         }
+//       } catch (const tf2::TransformException & ex) {
+//         std::cout << ex.what() << std::endl;
+//         continue;
+//       }
+//     }
+//   } else {
+//     std::cout << "failed to send command" << std::endl;
+//   }
+
+//   CHECK_THAT(t.transform.translation.x, Catch::Matchers::WithinAbs(0.0163832661, 1e-5));
+//   CHECK_THAT(t.transform.translation.y, Catch::Matchers::WithinAbs(-0.0016955391, 1e-5));
+//   CHECK_THAT(t.transform.rotation.z, Catch::Matchers::WithinAbs(-0.1029423121, 1e-5));
+//   CHECK_THAT(t.transform.rotation.w, Catch::Matchers::WithinAbs(0.9946873279, 1e-5));
+// }

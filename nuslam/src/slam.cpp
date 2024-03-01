@@ -84,7 +84,7 @@ public:
     odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
       "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
     green_path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
-    
+
 
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
@@ -93,10 +93,12 @@ public:
     rclcpp::QoS qos_profile(10);
     qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
     qos_profile.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
-    publisher_obs = create_publisher<visualization_msgs::msg::MarkerArray>("~/prediction",qos_profile);
+    publisher_obs = create_publisher<visualization_msgs::msg::MarkerArray>(
+      "~/prediction",
+      qos_profile);
     marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
       "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
-    
+
   }
 
 private:
@@ -132,64 +134,84 @@ private:
   turtlelib::Transform2D Tmo{};
   turtlelib::Transform2D Tob;
   turtlelib::Transform2D Tmb;
-  arma::Col<double> state_current{3+2*4, arma::fill::zeros}; 
-  arma::Col<double> g_old{3+2*4, arma::fill::zeros}; // 3 + 2*max_obs
+  arma::Col<double> state_current{3 + 2 * 4, arma::fill::zeros};
+  arma::Col<double> g_old{3 + 2 * 4, arma::fill::zeros}; // 3 + 2*max_obs
   std::vector<double> gg;
   int max_obs = 4;
   arma::Mat<double> sigma_hat_minus;
   turtlelib::Transform2D Tbb_prime;
   turtlelib::Twist2D twist_tbb;
-  arma::Mat<double> sigma_zero = arma::join_cols(arma::join_rows(arma::Mat<double>(3, 3, arma::fill::zeros), arma::Mat<double>(3, 2 * max_obs, arma::fill::zeros)), arma::join_rows(arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros), arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::eye) * 1e6));
+  arma::Mat<double> sigma_zero =
+    arma::join_cols(
+    arma::join_rows(
+      arma::Mat<double>(3, 3, arma::fill::zeros),
+      arma::Mat<double>(3, 2 * max_obs, arma::fill::zeros)),
+    arma::join_rows(
+      arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros),
+      arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::eye) * 1e6));
   visualization_msgs::msg::MarkerArray ob = visualization_msgs::msg::MarkerArray();
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_obs;
   arma::Mat<double> A;
-  arma::mat R = arma::Mat<double>(2*max_obs, 2*max_obs, arma::fill::eye) * 0.0001;
+  arma::mat R = arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::eye) * 0.0001;
 
   /// \brief  Callback function for the marker array
   /// \param msg marker array message
   void marker_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
   {
     Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
-    Tmb = Tmo*Tob;
+    Tmb = Tmo * Tob;
     state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
     state_current.at(1) = Tmb.translation().x;
     state_current.at(2) = Tmb.translation().y;
     A = var_mat();
 
     std::normal_distribution<> d1(0.0, input_noise);
-    
+
     auto q_man = arma::Mat<double>(3, 3, arma::fill::zeros);
-    q_man(0,0) = d1(get_random());
-    q_man(1,1) = d1(get_random());
-    q_man(2,2) = d1(get_random());
-    auto Q = arma::Mat<double>(arma::join_cols(arma::join_rows(arma::Mat<double>(3, 3, arma::fill::eye) * input_noise, arma::Mat<double>(3, 2 * max_obs, arma::fill::zeros)), arma::join_rows(arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros), arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::zeros))));
-    if (first){
+    q_man(0, 0) = d1(get_random());
+    q_man(1, 1) = d1(get_random());
+    q_man(2, 2) = d1(get_random());
+    auto Q =
+      arma::Mat<double>(
+      arma::join_cols(
+        arma::join_rows(
+          arma::Mat<double>(
+            3, 3,
+            arma::fill::eye) * input_noise, arma::Mat<double>(3, 2 * max_obs, arma::fill::zeros)),
+        arma::join_rows(
+          arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros),
+          arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::zeros))));
+    if (first) {
       sigma_hat_minus = A * sigma_zero * A.t() + Q;
       first = false;
-    }
-    else{
+    } else {
       sigma_hat_minus = A * sigma_hat_minus * A.t() + Q;
     }
 
-    for (std::size_t i =0 ; i < msg->markers.size(); i++)
-    {
-      if (msg->markers.at(i).id == int(i) && !turtlelib::almost_equal(msg->markers.at(i).pose.position.x,0.0, 1e-4) && !turtlelib::almost_equal(msg->markers.at(i).pose.position.y,0.0, 1e-4))
+    for (std::size_t i = 0; i < msg->markers.size(); i++) {
+      if (msg->markers.at(i).id == int(i) &&
+        !turtlelib::almost_equal(
+          msg->markers.at(i).pose.position.x, 0.0,
+          1e-4) && !turtlelib::almost_equal(msg->markers.at(i).pose.position.y, 0.0, 1e-4))
       {
-      turtlelib::Vector2D cyl{msg->markers.at(i).pose.position.x, msg->markers.at(i).pose.position.y};
-      auto vec_cyl = cyl;
-      auto mx = vec_cyl.x;
-      auto my = vec_cyl.y;
-      auto id = i;
+        turtlelib::Vector2D cyl{msg->markers.at(i).pose.position.x,
+          msg->markers.at(i).pose.position.y};
+        auto vec_cyl = cyl;
+        auto mx = vec_cyl.x;
+        auto my = vec_cyl.y;
+        auto id = i;
 
-      if(msg->markers.at(i).action != 2){
-      calculate_measurement(mx, my, id);
-      }
+        if (msg->markers.at(i).action != 2) {
+          calculate_measurement(mx, my, id);
+        }
       }
     }
 
-    Tmb = turtlelib::Transform2D(turtlelib::Vector2D{state_current(1), state_current(2)}, turtlelib::normalize_angle(state_current(0)));
+    Tmb = turtlelib::Transform2D(
+      turtlelib::Vector2D{state_current(1), state_current(
+          2)}, turtlelib::normalize_angle(state_current(0)));
 
-    Tmo = Tmb*Tob.inv();
+    Tmo = Tmb * Tob.inv();
     t1.header.frame_id = "map";
     t1.child_frame_id = odom_id;
     t1.header.stamp = this->get_clock()->now();
@@ -217,7 +239,7 @@ private:
 
     green_path.poses.push_back(ps);
     green_path_pub->publish(green_path);
-    g_old=state_current;
+    g_old = state_current;
     publish_obs();
   }
 
@@ -234,7 +256,7 @@ private:
     theta_odom = euler_from_quaternion(th);
 
     twist_tbb = turtlelib::Twist2D{del_theta, del_x, del_y};
-    
+
     auto Tbb_subprime = turtlelib::integrate_twist(twist_tbb);
 
 
@@ -253,24 +275,25 @@ private:
     t.transform.rotation.w = q.w();
     tf_broadcaster_->sendTransform(t);
 
-    
+
   }
 
   turtlelib::Twist2D get_twist(turtlelib::Transform2D Tbb)
   {
-     if(turtlelib::almost_equal(Tbb.translation().y, 0.0) && turtlelib::almost_equal(Tbb.rotation(), 0.0))
-        {
-            return turtlelib::Twist2D{0, Tbb.translation().x, 0};
-        }
-        else
-        {
-            double r = fabs(Tbb.translation().y / (1 - cos(Tbb.rotation())));
-            return turtlelib::Twist2D{Tbb.rotation(), r * Tbb.rotation(), 0};
-        }
+    if (turtlelib::almost_equal(
+        Tbb.translation().y,
+        0.0) && turtlelib::almost_equal(Tbb.rotation(), 0.0))
+    {
+      return turtlelib::Twist2D{0, Tbb.translation().x, 0};
+    } else {
+      double r = fabs(Tbb.translation().y / (1 - cos(Tbb.rotation())));
+      return turtlelib::Twist2D{Tbb.rotation(), r * Tbb.rotation(), 0};
+    }
 
   }
 
-  double euler_from_quaternion(geometry_msgs::msg::Quaternion quaternion){
+  double euler_from_quaternion(geometry_msgs::msg::Quaternion quaternion)
+  {
     auto x = quaternion.x;
     auto y = quaternion.y;
     auto z = quaternion.z;
@@ -282,94 +305,116 @@ private:
 
     return yaw;
   }
-  
+
   /// \brief  Publish the obstacles
   void publish_obs()
   {
     int i = 0;
-    
-      for (i = 0; i < max_obs; i++) {
-        if (state_current.n_elem > 3 && state_current(3+2*i) != 0.0 && state_current(3+2*i+1) != 0.0){
-          visualization_msgs::msg::Marker cyl = visualization_msgs::msg::Marker();
-          cyl.header.stamp = this->get_clock()->now();
-          cyl.header.frame_id = "map";
-          cyl.id = i + 1;
-          cyl.type = visualization_msgs::msg::Marker::CYLINDER;
-          cyl.action = visualization_msgs::msg::Marker::ADD;
-          cyl.scale.x = 0.05* 2;
-          cyl.scale.y = 0.05 * 2;
-          cyl.scale.z = 0.25;
-          cyl.pose.position.x = state_current(3+2*i);
-          cyl.pose.position.y = state_current(3+2*i+1);
-          cyl.pose.position.z = 0.25 / 2;
-          cyl.color.r = 0.0;
-          cyl.color.g = 1.0;
-          cyl.color.b = 0.0;
-          cyl.color.a = 1.0;
-          ob.markers.push_back(cyl);
-          publisher_obs->publish(ob);
-        }
+
+    for (i = 0; i < max_obs; i++) {
+      if (state_current.n_elem > 3 && state_current(3 + 2 * i) != 0.0 &&
+        state_current(3 + 2 * i + 1) != 0.0)
+      {
+        visualization_msgs::msg::Marker cyl = visualization_msgs::msg::Marker();
+        cyl.header.stamp = this->get_clock()->now();
+        cyl.header.frame_id = "map";
+        cyl.id = i + 1;
+        cyl.type = visualization_msgs::msg::Marker::CYLINDER;
+        cyl.action = visualization_msgs::msg::Marker::ADD;
+        cyl.scale.x = 0.05 * 2;
+        cyl.scale.y = 0.05 * 2;
+        cyl.scale.z = 0.25;
+        cyl.pose.position.x = state_current(3 + 2 * i);
+        cyl.pose.position.y = state_current(3 + 2 * i + 1);
+        cyl.pose.position.z = 0.25 / 2;
+        cyl.color.r = 0.0;
+        cyl.color.g = 1.0;
+        cyl.color.b = 0.0;
+        cyl.color.a = 1.0;
+        ob.markers.push_back(cyl);
+        publisher_obs->publish(ob);
       }
+    }
   }
   arma::Mat<double> var_mat()
   {
-    if (turtlelib::almost_equal(twist_tbb.omega,0.0)){
-      arma::Mat<double> a_mat = arma::Mat<double>(3+2*max_obs, 3+2*max_obs, arma::fill::zeros);
-      arma::Mat<double> identity = arma::Mat<double>(3+2*max_obs,3+2*max_obs,arma::fill::eye);
-      a_mat(0,0) = 0.0;
+    if (turtlelib::almost_equal(twist_tbb.omega, 0.0)) {
+      arma::Mat<double> a_mat = arma::Mat<double>(
+        3 + 2 * max_obs, 3 + 2 * max_obs,
+        arma::fill::zeros);
+      arma::Mat<double> identity = arma::Mat<double>(
+        3 + 2 * max_obs, 3 + 2 * max_obs,
+        arma::fill::eye);
+      a_mat(0, 0) = 0.0;
       // a_mat(1,0) = -state_current(2) + g_old(2);
       // a_mat(2,0) = state_current(1) - g_old(1);
       a_mat(1, 0) = -twist_tbb.x * std::sin(turtlelib::normalize_angle(g_old(0)));
       a_mat(2, 0) = twist_tbb.x * std::cos(turtlelib::normalize_angle(g_old(0)));
-      
+
+      arma::Mat<double> var = identity + a_mat;
+      return var;
+    } else {
+      arma::Mat a_mat = arma::Mat<double>(3 + 2 * max_obs, 3 + 2 * max_obs, arma::fill::zeros);
+      arma::Mat<double> identity = arma::Mat<double>(
+        3 + 2 * max_obs, 3 + 2 * max_obs,
+        arma::fill::eye);
+      a_mat(0, 0) = 0.0;
+      a_mat(
+        1,
+        0) = (twist_tbb.x / twist_tbb.omega) *
+        (std::cos(turtlelib::normalize_angle(g_old(0) + twist_tbb.omega)) -
+        std::cos(turtlelib::normalize_angle(g_old(0))));
+      a_mat(
+        2,
+        0) = (twist_tbb.x / twist_tbb.omega) *
+        (std::sin(turtlelib::normalize_angle(g_old(0) + twist_tbb.omega)) -
+        std::sin(turtlelib::normalize_angle(g_old(0))));
       arma::Mat<double> var = identity + a_mat;
       return var;
     }
-    else{ 
-      arma::Mat a_mat = arma::Mat<double>(3+2*max_obs, 3+2*max_obs, arma::fill::zeros);
-      arma::Mat<double> identity = arma::Mat<double>(3+2*max_obs,3+2*max_obs,arma::fill::eye);
-      a_mat(0, 0) = 0.0;
-      a_mat(1, 0) = (twist_tbb.x/twist_tbb.omega) * (std::cos(turtlelib::normalize_angle(g_old(0) + twist_tbb.omega)) - std::cos(turtlelib::normalize_angle(g_old(0))));
-      a_mat(2, 0) = (twist_tbb.x/twist_tbb.omega) * (std::sin(turtlelib::normalize_angle(g_old(0) + twist_tbb.omega)) - std::sin(turtlelib::normalize_angle(g_old(0))));
-      arma::Mat<double> var = identity + a_mat;
-      return var;
-    }   
   }
 
   /// \brief  Calculate the measurement
   /// \param mx x coordinate of the measurement
   /// \param my y coordinate of the measurement
   /// \param id id of the measurement
-  void calculate_measurement(double mx,double my,int id){
+  void calculate_measurement(double mx, double my, int id)
+  {
     auto dx = mx;
     auto dy = my;
     auto d = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
     arma::vec zj = arma::vec({d, turtlelib::normalize_angle(std::atan2(dy, dx))});
 
-    if(turtlelib::almost_equal(state_current(3+2*id),0.0) && turtlelib::almost_equal(state_current(3+2*id+1),0.0)){
-      state_current(3+2*id) = state_current(1) + d * std::cos(state_current(0) + zj(1));
-      state_current(3+2*id+1) = state_current(2) + d * std::sin(state_current(0) + zj(1));
+    if (turtlelib::almost_equal(
+        state_current(3 + 2 * id),
+        0.0) && turtlelib::almost_equal(state_current(3 + 2 * id + 1), 0.0))
+    {
+      state_current(3 + 2 * id) = state_current(1) + d * std::cos(state_current(0) + zj(1));
+      state_current(3 + 2 * id + 1) = state_current(2) + d * std::sin(state_current(0) + zj(1));
     }
 
-    auto dx_hat = state_current.at(3+2*id) - state_current.at(1);
-    auto dy_hat = state_current.at(3+2*id+1) - state_current.at(2);
+    auto dx_hat = state_current.at(3 + 2 * id) - state_current.at(1);
+    auto dy_hat = state_current.at(3 + 2 * id + 1) - state_current.at(2);
     auto q = std::pow(dx_hat, 2) + std::pow(dy_hat, 2);
-    arma::vec z_hat = arma::vec({std::sqrt(q), turtlelib::normalize_angle(std::atan2(dy_hat, dx_hat) - state_current.at(0))});
+    arma::vec z_hat =
+      arma::vec(
+      {std::sqrt(q),
+        turtlelib::normalize_angle(std::atan2(dy_hat, dx_hat) - state_current.at(0))});
 
-    arma::Mat<double> H_i = arma::Mat<double>(2, 3+2*max_obs, arma::fill::zeros);
-    H_i.at(0,0) = 0.0;
-    H_i.at(0,1) = -dx_hat/std::sqrt(q);
-    H_i.at(0,2) = -dy_hat/std::sqrt(q);
-    H_i.at(1,0) = -1.0;
-    H_i.at(1,1) = dy_hat/q;
-    H_i.at(1,2) = -dx_hat/q;
-    H_i.at(1,3+2*id) = -dy_hat/q;
-    H_i.at(1,3+2*id+1) = dx_hat/q;
-    H_i.at(0,3+2*id) = dx_hat/std::sqrt(q);
-    H_i.at(0,3+2*id+1) = dy_hat/std::sqrt(q);
+    arma::Mat<double> H_i = arma::Mat<double>(2, 3 + 2 * max_obs, arma::fill::zeros);
+    H_i.at(0, 0) = 0.0;
+    H_i.at(0, 1) = -dx_hat / std::sqrt(q);
+    H_i.at(0, 2) = -dy_hat / std::sqrt(q);
+    H_i.at(1, 0) = -1.0;
+    H_i.at(1, 1) = dy_hat / q;
+    H_i.at(1, 2) = -dx_hat / q;
+    H_i.at(1, 3 + 2 * id) = -dy_hat / q;
+    H_i.at(1, 3 + 2 * id + 1) = dx_hat / q;
+    H_i.at(0, 3 + 2 * id) = dx_hat / std::sqrt(q);
+    H_i.at(0, 3 + 2 * id + 1) = dy_hat / std::sqrt(q);
 
 
-    arma::Mat<double> Ri = R.submat(2*id, 2*id, 2*id+1, 2*id+1);
+    arma::Mat<double> Ri = R.submat(2 * id, 2 * id, 2 * id + 1, 2 * id + 1);
     arma::Mat<double> K = sigma_hat_minus * H_i.t() * (H_i * sigma_hat_minus * H_i.t() + Ri).i();
     arma::vec zj_new{2, arma::fill::zeros};
     zj_new.at(0) = zj.at(0) - z_hat.at(0);
@@ -378,7 +423,7 @@ private:
     state_current = state_current + K * (zj_new);
     state_current.at(0) = turtlelib::normalize_angle(state_current.at(0));
 
-    auto identity = arma::Mat<double>(3+2*max_obs,3+2*max_obs,arma::fill::eye);
+    auto identity = arma::Mat<double>(3 + 2 * max_obs, 3 + 2 * max_obs, arma::fill::eye);
     sigma_hat_minus = (identity - K * H_i) * sigma_hat_minus;
 
   }
