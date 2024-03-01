@@ -31,10 +31,14 @@
     - [x] Task C.5
     - [x] Task C.6
     - [x] Task C.7
+    - [x] Task C.9
+    - [x] Task C.10
+    - [x] Task C.11
+    - [x] Task C.12
 
-- [ ] Kinematics - Task D
+- [x] Kinematics - Task D
     - [x] Task D.1
-    - [ ] Task D.2
+    - [x] Task D.2
     - [x] Task D.3
 
 - [x] Robot Control - Task E
@@ -48,3 +52,14 @@
     - [x] Task F.1
     - [x] Task F.2
     - [x] Task F.5
+    - [x] Task F.6
+
+- [x] SLAM - Task L
+    - [x] Task L.1
+    - [x] Task L.2
+
+- [x] Visualization- Task V
+    - [x] Task V.1
+    - [x] Task V.2
+    - [x] Task V.3
+    - [x] Task V.4
