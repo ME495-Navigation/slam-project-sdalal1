@@ -127,13 +127,13 @@ public:
     publisher_timestep =
       create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
     rclcpp::QoS qos_profile(10);
-    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+    // qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
     qos_profile.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
     publisher_walls =
       create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", qos_profile);
     rclcpp::QoS qos_profile1(10);
-    qos_profile1.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-    qos_profile1.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+    // qos_profile1.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+    qos_profile1.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
     publisher_obs = create_publisher<visualization_msgs::msg::MarkerArray>(
       "~/obstacles",
       qos_profile);
@@ -191,6 +191,11 @@ private:
   geometry_msgs::msg::PoseStamped ps = geometry_msgs::msg::PoseStamped();
   sensor_msgs::msg::LaserScan laser = sensor_msgs::msg::LaserScan();
 
+  visualization_msgs::msg::MarkerArray fake_obs = visualization_msgs::msg::MarkerArray();
+  visualization_msgs::msg::Marker fake_cyl = visualization_msgs::msg::Marker();
+  visualization_msgs::msg::Marker cyl = visualization_msgs::msg::Marker();
+
+
   double rate = 0.0;
   double x0 = 0.0;
   double y0 = 0.0;
@@ -234,8 +239,6 @@ private:
     int i = 0;
     if (obs_x.size() == obs_y.size()) {
       for (i = 0; i < int(obs_x.size()); i++) {
-        visualization_msgs::msg::Marker cyl = visualization_msgs::msg::Marker();
-        cyl.header.stamp = this->get_clock()->now();
         cyl.header.frame_id = "nusim/world";
         cyl.id = i + 1;
         cyl.type = visualization_msgs::msg::Marker::CYLINDER;
@@ -265,7 +268,7 @@ private:
   /// \brief Creates the walls and publish it
   void publish_walls()
   {
-    w1.header.stamp = this->get_clock()->now();
+    
     w1.header.frame_id = "nusim/world";
     w1.id = 1;
     w1.type = visualization_msgs::msg::Marker::CUBE;
@@ -281,7 +284,7 @@ private:
     w1.color.b = 0.0;
     w1.color.a = 1.0;
 
-    w2.header.stamp = this->get_clock()->now();
+    
     w2.header.frame_id = "nusim/world";
     w2.id = 2;
     w2.type = visualization_msgs::msg::Marker::CUBE;
@@ -297,7 +300,7 @@ private:
     w2.color.b = 0.0;
     w2.color.a = 1.0;
 
-    w3.header.stamp = this->get_clock()->now();
+    
     w3.header.frame_id = "nusim/world";
     w3.id = 3;
     w3.type = visualization_msgs::msg::Marker::CUBE;
@@ -313,7 +316,6 @@ private:
     w3.color.b = 0.0;
     w3.color.a = 1.0;
 
-    w4.header.stamp = this->get_clock()->now();
     w4.header.frame_id = "nusim/world";
     w4.id = 4;
     w4.type = visualization_msgs::msg::Marker::CUBE;
@@ -362,7 +364,6 @@ private:
   void publish_laser()
   {
     laser.header.frame_id = "red/base_scan";
-    laser.header.stamp = this->get_clock()->now();
     laser.angle_min = 0.0;
     laser.angle_max = 2 * turtlelib::PI;
     laser.angle_increment = 0.01745329238474369; // in radians
@@ -384,34 +385,34 @@ private:
       auto con = diff->get_transformation().translation().y - slope *
         diff->get_transformation().translation().x;
 
-      if (v2.y > arena_y_length / 2) {
-        v2.y = arena_y_length / 2;
-        v2.x = (arena_y_length / 2 - con) / slope;
-        auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
-        dist = std::min(dist, mag);
-      }
-      if (v2.x < -arena_x_length / 2) {
-        v2.x = -arena_x_length / 2;
-        v2.y = (slope * -arena_x_length / 2) + con;
-        auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
-        dist = std::min(dist, mag);
-      }
-      if (v2.y < -arena_y_length / 2) {
-        v2.y = -arena_y_length / 2;
-        v2.x = (-arena_y_length / 2 - con) / slope;
-        auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
-        dist = std::min(dist, mag);
-      }
-      if (v2.x > arena_x_length / 2) {
-        v2.x = arena_x_length / 2;
-        v2.y = (arena_x_length / 2 * slope) + con;
-        auto v3 = diff->get_transformation().inv()(v2);
-        dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
-        dist = std::min(dist, mag);
-      }
+      // if (v2.y > arena_y_length / 2) {
+      //   v2.y = arena_y_length / 2;
+      //   v2.x = (arena_y_length / 2 - con) / slope;
+      //   auto v3 = diff->get_transformation().inv()(v2);
+      //   dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+      //   dist = std::min(dist, mag);
+      // }
+      // if (v2.x < -arena_x_length / 2) {
+      //   v2.x = -arena_x_length / 2;
+      //   v2.y = (slope * -arena_x_length / 2) + con;
+      //   auto v3 = diff->get_transformation().inv()(v2);
+      //   dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+      //   dist = std::min(dist, mag);
+      // }
+      // if (v2.y < -arena_y_length / 2) {
+      //   v2.y = -arena_y_length / 2;
+      //   v2.x = (-arena_y_length / 2 - con) / slope;
+      //   auto v3 = diff->get_transformation().inv()(v2);
+      //   dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+      //   dist = std::min(dist, mag);
+      // }
+      // if (v2.x > arena_x_length / 2) {
+      //   v2.x = arena_x_length / 2;
+      //   v2.y = (arena_x_length / 2 * slope) + con;
+      //   auto v3 = diff->get_transformation().inv()(v2);
+      //   dist = turtlelib::magnitude(turtlelib::Vector2D{v3.x, v3.y});
+      //   dist = std::min(dist, mag);
+      // }
       for (int j = 0; j < int(obs_x.size()); j++) {
         if (distance(
             obs_x[j], obs_y[j], diff->get_transformation().translation().x,
@@ -481,9 +482,7 @@ private:
   void fake_timer_callback()
   {
     publish_laser();
-    visualization_msgs::msg::MarkerArray fake_obs = visualization_msgs::msg::MarkerArray();
-    visualization_msgs::msg::Marker fake_cyl = visualization_msgs::msg::Marker();
-    fake_cyl.header.stamp = this->get_clock()->now();
+    
     fake_cyl.header.frame_id = "red/base_footprint";
     fake_cyl.type = visualization_msgs::msg::Marker::CYLINDER;
     std::normal_distribution<> d1(0.0, basic_sensor_variance_);
@@ -518,6 +517,7 @@ private:
       fake_obs.markers.push_back(fake_cyl);
     }
     publish_fake_obs->publish(fake_obs);
+    fake_obs.markers.clear();
   }
 
   /// \brief Creates a timer to publish frames and timestep
@@ -531,12 +531,19 @@ private:
     publisher_timestep->publish(time_msg);
     red_sensor.stamp = this->get_clock()->now();
     red_path.header.stamp = this->get_clock()->now();
-
+    cyl.header.stamp = this->get_clock()->now();
     t.header.stamp = this->get_clock()->now();
     ps.header.stamp = this->get_clock()->now();
+    laser.header.stamp = this->get_clock()->now();
+    w1.header.stamp = this->get_clock()->now();
+    w2.header.stamp = this->get_clock()->now();
+    w3.header.stamp = this->get_clock()->now();
+    w4.header.stamp = this->get_clock()->now();
+
 
     sensor_pub->publish(red_sensor);
 
+    fake_cyl.header.stamp = this->get_clock()->now();
 
     tf_broadcaster_->sendTransform(t);
   }

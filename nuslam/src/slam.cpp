@@ -167,10 +167,10 @@ private:
 
     std::normal_distribution<> d1(0.0, input_noise);
 
-    auto q_man = arma::Mat<double>(3, 3, arma::fill::zeros);
-    q_man(0, 0) = d1(get_random());
-    q_man(1, 1) = d1(get_random());
-    q_man(2, 2) = d1(get_random());
+    // auto q_man = arma::Mat<double>(3, 3, arma::fill::zeros);
+    // q_man(0, 0) = d1(get_random());
+    // q_man(1, 1) = d1(get_random());
+    // q_man(2, 2) = d1(get_random());
     auto Q =
       arma::Mat<double>(
       arma::join_cols(
@@ -241,6 +241,7 @@ private:
     green_path_pub->publish(green_path);
     g_old = state_current;
     publish_obs();
+    ob.markers.clear();
   }
 
   /// \brief  Callback function for the odometry
