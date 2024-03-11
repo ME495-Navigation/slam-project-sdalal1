@@ -53,7 +53,7 @@ public:
     qos_profile.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
     publish_landmarks = create_publisher<visualization_msgs::msg::MarkerArray>("landmarks",qos_profile);
-    publish_fittings = create_publisher<visualization_msgs::msg::MarkerArray>("fitting",qos_profile);
+    publish_fittings = create_publisher<visualization_msgs::msg::MarkerArray>("fitting", qos_profile);
 
 
     timer_ = create_wall_timer(
@@ -253,7 +253,7 @@ private:
           A = Y.i() * A_star;
         }
 
-        RCLCPP_INFO_STREAM(this->get_logger(), "A: " << A);
+        // RCLCPP_INFO_STREAM(this->get_logger(), "A: " << A);
 
         a = -A(1) / (2 * A(0));
         b = -A(2) / (2 * A(0));
@@ -262,7 +262,7 @@ private:
         a = a + x;
         b = b + y;
 
-        RCLCPP_INFO_STREAM(this->get_logger(), "Circle center: " << a << " " << b << " " << r);
+        // RCLCPP_INFO_STREAM(this->get_logger(), "Circle center: " << a << " " << b << " " << r);
 
         publish_fitting(i);
         
