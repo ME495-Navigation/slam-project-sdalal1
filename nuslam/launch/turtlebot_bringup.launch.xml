@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+
+<include file = "$(find-pkg-share nuturtle_control)/launch/start_robot.launch.xml">
+    <arg name="cmd_src" value="none"/>
+    <arg name="robot" value="localhost"/>
+    <arg name="use_rviz" value="false"/>
+</include>
+
+<!-- <node pkg="hls_lfcd_lds_driver" exec="hlds_laser_publisher">
+    <param name=  "port" value="/dev/ttyUSB0"/>
+    <param name= "frame_id" value="green/base_scan" />
+</node>
+<node pkg="numsr_turtlebot" exec="numsr_turtlebot"/>-->
+
+<!-- <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 nusim/world blue/odom"/> -->
+
+
+
+</launch>
+<!-- ros2 launch nuturtle_control start_robot.launch.xml cmd_src:=circle robot:=localhost use_rviz:=false -->

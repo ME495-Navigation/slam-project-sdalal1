@@ -82,7 +82,7 @@ public:
 private:
   double wheel_radius_ = 0.0;
   double track_width_ = 0.0;
-  int motor_cmd_max_ = 0.0;
+  int motor_cmd_max_ = 0;
   double motor_cmd_per_rad_sec_ = 0.0;
   double encoder_ticks_per_rad_ = 0.0;
   double collision_radius_ = 0.0;
@@ -105,8 +105,8 @@ private:
     turtlelib::Twist2D twist{a, lx, ly};
     const auto wheel_angle = diff.compute_ik(twist);
     auto pub_wheel = nuturtlebot_msgs::msg::WheelCommands();
-    pub_wheel.left_velocity = static_cast<int32_t>(wheel_angle.left / motor_cmd_per_rad_sec_);
-    pub_wheel.right_velocity = static_cast<int32_t>(wheel_angle.right / motor_cmd_per_rad_sec_);
+    pub_wheel.left_velocity = static_cast<int>(wheel_angle.left / motor_cmd_per_rad_sec_);
+    pub_wheel.right_velocity = static_cast<int>(wheel_angle.right / motor_cmd_per_rad_sec_);
 
     if (pub_wheel.left_velocity > motor_cmd_max_) {
       pub_wheel.left_velocity = motor_cmd_max_;
@@ -151,6 +151,8 @@ private:
       js_pub.velocity = std::vector<double>(2);
       js_pub.velocity.at(0) = (left_en - old_left_en) / (dt * encoder_ticks_per_rad_);
       js_pub.velocity.at(1) = (right_en - old_right_en) / (dt * encoder_ticks_per_rad_);
+      // js_pub.velocity.at(0) = (left_en - old_left_en) / (dt);
+      // js_pub.velocity.at(1) = (right_en - old_right_en) / (dt);
 
       joint_publish->publish(js_pub);
       old_sensor_data = *msg;

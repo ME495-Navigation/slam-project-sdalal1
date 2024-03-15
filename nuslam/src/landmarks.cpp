@@ -45,8 +45,13 @@ public:
   Landmarks()
   : Node("landmarks")
   {
+    declare_parameter("laser_id", "green/base_scan");
+
+    laser_id = get_parameter("laser_id").as_string();
     lidar_subscription = create_subscription<sensor_msgs::msg::LaserScan>(
-      "scan", 10, std::bind(&Landmarks::lidar_callback, this, std::placeholders::_1));
+      "scan", rclcpp::SensorDataQoS(), std::bind(&Landmarks::lidar_callback, this, std::placeholders::_1));
+    // lidar_subscription = create_subscription<sensor_msgs::msg::LaserScan>(
+    //   "scan", 10, std::bind(&Landmarks::lidar_callback, this, std::placeholders::_1));
 
     rclcpp::QoS qos_profile(10);
     qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
@@ -72,6 +77,7 @@ private:
   double a, b, r;
   visualization_msgs::msg::MarkerArray fitting_array;
   visualization_msgs::msg::Marker fitting_marker;
+  std::string laser_id;
 
 
   /// \brief Callback function for the timer
@@ -135,16 +141,24 @@ private:
         }
     }
 
+    
     // Remove clusters smaller than 3 points
     clusters.erase(remove_if(clusters.begin(), clusters.end(),
-                              [](const std::vector<turtlelib::Point2D>& cluster) { return cluster.size() < 4; }),
-                    clusters.end());
+                         [](const std::vector<turtlelib::Point2D>& cluster) { return cluster.size() < 10 || cluster.size() > 30; }),
+               clusters.end());
+    // clusters.erase(remove_if(clusters.begin(), clusters.end(),
+    //                      [](const std::vector<turtlelib::Point2D>& cluster) { return cluster.size() < 4 || cluster.size() > 20; }),
+    //            clusters.end());
+    // clusters.erase(remove_if(clusters.begin(), clusters.end(),
+    //                      [](const std::vector<turtlelib::Point2D>& cluster) { return cluster.size() < 4; }),
+    //            clusters.end());
 
-    // RCLCPP_INFO_STREAM(this->get_logger(), "Number of clusters: " << clusters.size());
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Number of clusters: " << clusters.size());
     // for (const auto& cluster : clusters)
     for (size_t i = 0; i < clusters.size(); i++)
     {
-        marker.header.frame_id = "red/base_scan";
+        marker.header.frame_id = laser_id;
         marker.header.stamp = this->get_clock()->now();
         marker.id = i;
         marker.type = visualization_msgs::msg::Marker::POINTS;
@@ -263,8 +277,10 @@ private:
         b = b + y;
 
         // RCLCPP_INFO_STREAM(this->get_logger(), "Circle center: " << a << " " << b << " " << r);
-
+        if (fabs(r-0.038) < 0.07)
+        {
         publish_fitting(i);
+        }
         
     }
     
@@ -273,13 +289,35 @@ private:
     marker.points.clear();
     landmark_array.markers.clear();
     clusters.clear();
+    //check if the circle fittings are not very close to each other
+    //if they are close, remove the smaller one
+    for (size_t i = 0; i < fitting_array.markers.size(); i++)
+    {
+        for (size_t j = i+1; j < fitting_array.markers.size(); j++)
+        {
+            double dist = distance(fitting_array.markers.at(i).pose.position.x, fitting_array.markers.at(i).pose.position.y, fitting_array.markers.at(j).pose.position.x, fitting_array.markers.at(j).pose.position.y);
+            if (dist < 0.09)
+            {
+                if (fitting_array.markers.at(i).scale.x < fitting_array.markers.at(j).scale.x)
+                {
+                    fitting_array.markers.erase(fitting_array.markers.begin() + i);
+                }
+                else
+                {
+                    fitting_array.markers.erase(fitting_array.markers.begin() + j);
+                }
+            }
+        }
+    }
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Number of fittings: " << fitting_array.markers.size());
     publish_fittings -> publish(fitting_array);
     fitting_array.markers.clear();
 }
 
   void publish_fitting(int id){
     //publish sphere with the fitting
-    fitting_marker.header.frame_id = "red/base_scan";
+    fitting_marker.header.frame_id = laser_id;
     fitting_marker.header.stamp = this->get_clock()->now();
     fitting_marker.type = visualization_msgs::msg::Marker::SPHERE;
     fitting_marker.action = visualization_msgs::msg::Marker::ADD;

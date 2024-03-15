@@ -13,18 +13,6 @@
       <arg name="use_lidar_fitting" value="$(var use_lidar_fitting)"/>
   </include>
 
-  <include file = "$(find-pkg-share nuslam)/launch/slam.launch.xml"
-      if="$(eval '\'$(var robot)\' == \'none\'')">
-      <arg name="cmd_src" value="$(var cmd_src)"/>
-      <arg name="robot" value="$(var robot)"/>
-      <arg name="use_rviz" value="$(var use_rviz)"/>
-      <arg name="use_lidar_fitting" value="$(var use_lidar_fitting)"/>
-  </include>
-
   <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'nusim\'')"/>
-  <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'none\'')">
-    <param name="laser_id" value="green/base_scan"/>
-  </node>
-
 
 </launch>

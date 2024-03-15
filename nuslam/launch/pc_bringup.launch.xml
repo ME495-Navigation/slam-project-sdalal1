@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<launch>
+
+<include file = "$(find-pkg-share nuturtle_control)/launch/start_robot.launch.xml">
+    <arg name="cmd_src" value="teleop"/>
+    <arg name="robot" value="none"/>
+    <arg name="use_rviz" value="true"/>
+    <arg name="rviz_config" value="$(find-pkg-share nuturtle_control)/config/control_blue.rviz"/>
+</include>
+
+<node pkg="nuslam" exec="landmarks"> 
+    <param name="laser_id" value="green/base_scan"/>
+</node>
+
+<include file = "$(find-pkg-share nuslam)/launch/slam.launch.xml">
+<arg name="cmd_src" value="none"/>
+<arg name="robot" value="none"/>
+<arg name="use_rviz" value="false"/>
+</include>
+
+<node pkg="nusim" exec="nusim" output="screen">
+    <param name="draw_only" value="true"/>
+</node>
+
+<!-- <node pkg="nuturtle_control" exec="turtle_control">
+    <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    <remap from="joint_states" to="blue/joint_states"/>
+</node>
+
+<node pkg="nuturtle_control" exec="odometry">
+    <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    <param name="body_id" value="blue/base_footprint"/>
+    <param name="odom_id" value="blue/odom"/>
+    <param name="wheel_left" value="wheel_left_joint"/>
+    <param name="wheel_right" value="wheel_right_joint"/>
+    <remap from="joint_states" to="blue/joint_states"/>
+
+</node> -->
+
+
+</launch>
+
+

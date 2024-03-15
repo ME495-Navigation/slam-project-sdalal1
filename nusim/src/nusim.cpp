@@ -89,6 +89,7 @@ public:
     declare_parameter("laser_maximum_range", 2 * turtlelib::PI);
     declare_parameter("laser_angle_increment", 0.01745329238474369);
     declare_parameter("laser_noise_variance", 0.001);
+    declare_parameter("draw_only", false);
 
     rate = get_parameter("rate").as_double();
     x0 = get_parameter("x0").as_double();
@@ -111,6 +112,7 @@ public:
     laser_maximum_range_ = get_parameter("laser_maximum_range").as_double();
     laser_angle_increment_ = get_parameter("laser_angle_increment").as_double();
     laser_noise_variance_ = get_parameter("laser_noise_variance").as_double();
+    draw_only = get_parameter("draw_only").as_bool();
 
     timer_ = create_wall_timer(
       1000ms / rate, std::bind(&Nusim::timer_callback, this));
@@ -452,7 +454,9 @@ private:
 
       laser.ranges.push_back(dist + laser_noise);
     }
+    if(!draw_only){
     laser_pub->publish(laser);
+    }
   }
 
   /// \brief distance between two points
@@ -481,8 +485,9 @@ private:
   /// @brief fake obstacle publisher
   void fake_timer_callback()
   {
+    if(!draw_only){
     publish_laser();
-    
+    }
     fake_cyl.header.frame_id = "red/base_footprint";
     fake_cyl.type = visualization_msgs::msg::Marker::CYLINDER;
     std::normal_distribution<> d1(0.0, basic_sensor_variance_);
@@ -516,8 +521,10 @@ private:
       }
       fake_obs.markers.push_back(fake_cyl);
     }
+    if(!draw_only){
     publish_fake_obs->publish(fake_obs);
     fake_obs.markers.clear();
+    }
   }
 
   /// \brief Creates a timer to publish frames and timestep
@@ -528,7 +535,9 @@ private:
     auto time_msg = std_msgs::msg::UInt64();
     count_++;
     time_msg.data = count_;
+    if(!draw_only){
     publisher_timestep->publish(time_msg);
+    }
     red_sensor.stamp = this->get_clock()->now();
     red_path.header.stamp = this->get_clock()->now();
     cyl.header.stamp = this->get_clock()->now();
@@ -540,9 +549,9 @@ private:
     w3.header.stamp = this->get_clock()->now();
     w4.header.stamp = this->get_clock()->now();
 
-
+    if(!draw_only){
     sensor_pub->publish(red_sensor);
-
+    }
     fake_cyl.header.stamp = this->get_clock()->now();
 
     tf_broadcaster_->sendTransform(t);
@@ -572,8 +581,8 @@ private:
   /// \param the message to get published wheel commands
   void red_wheel_callback(const nuturtlebot_msgs::msg::WheelCommands::SharedPtr msg)
   {
-    auto left_wheel_velocity = static_cast<double>(msg->left_velocity) * motor_cmd_per_rad_sec_;
-    auto right_wheel_velocity = static_cast<double>(msg->right_velocity) *  motor_cmd_per_rad_sec_;
+    auto left_wheel_velocity = static_cast<double>(msg->left_velocity) * 7.5;
+    auto right_wheel_velocity = static_cast<double>(msg->right_velocity) * 7.5;
     // auto left_wheel_velocity = (msg->left_velocity);
     // auto right_wheel_velocity = (msg->right_velocity);
     std::normal_distribution<> d(0.0, input_noise_);
@@ -589,15 +598,19 @@ private:
       right_wheel_velocity += noise;
     }
     diff->compute_fk(
-      left_wheel_velocity /rate,
-      right_wheel_velocity /rate);
+      left_wheel_velocity * (motor_cmd_per_rad_sec_/rate),
+      right_wheel_velocity * (motor_cmd_per_rad_sec_/rate));
 
-    left_wheel += (left_wheel_velocity)* slipping_noise;
+    RCLCPP_INFO_STREAM(
+      get_logger(),
+      "wheel_twist"<< diff->get_twist());
 
-    right_wheel += (right_wheel_velocity)* slipping_noise;
+    left_wheel += (left_wheel_velocity)* motor_cmd_per_rad_sec_ *slipping_noise  * 652.229299363/rate;
 
-    red_sensor.left_encoder = left_wheel * 652.229299363/rate;
-    red_sensor.right_encoder = right_wheel * 652.229299363/rate;
+    right_wheel += (right_wheel_velocity)* motor_cmd_per_rad_sec_ *slipping_noise  * 652.229299363/rate;
+
+    red_sensor.left_encoder = left_wheel;
+    red_sensor.right_encoder = right_wheel;
 
     check_collision();
     auto trans_red = diff->get_transformation();
@@ -622,7 +635,9 @@ private:
     if(red_path.poses.size() >= 7000){
       red_path.poses.erase(red_path.poses.begin());
     }
+    if(!draw_only){
     red_path_pub->publish(red_path);
+    }
   }
 
   void check_collision()

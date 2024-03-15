@@ -57,8 +57,12 @@ public:
     declare_parameter("odom_id", "odom");
     declare_parameter("wheel_left", " ");
     declare_parameter("wheel_right", " ");
-    declare_parameter("input_noise", 1e-5);
-    declare_parameter("sensor_noise", 1e-5);
+    // declare_parameter("input_noise", 1e-3);
+    // declare_parameter("sensor_noise", 1e-1);
+    declare_parameter("input_noise", 1e-3);
+    declare_parameter("sensor_noise", 1e-1);
+    declare_parameter("use_lidar_fitting", true);
+
 
     wheel_radius_ = get_parameter("wheel_radius").as_double();
     track_width_ = get_parameter("track_width").as_double();
@@ -68,6 +72,7 @@ public:
     wheel_right = get_parameter("wheel_right").as_string();
     input_noise = get_parameter("input_noise").as_double();
     sensor_noise = get_parameter("sensor_noise").as_double();
+    bool use_lidar_fitting = get_parameter("use_lidar_fitting").as_bool();
 
     if (body_id == " " || wheel_left == " " || wheel_right == " " || wheel_radius_ == 0.0 ||
       track_width_ == 0.0)
@@ -81,8 +86,10 @@ public:
       throw std::runtime_error("runtime_error_exception");
     }
     // odom_publisher = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    // odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
+    //   "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
     odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
-      "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
+      "odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
     green_path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
 
 
@@ -101,8 +108,16 @@ public:
     qos_profile2.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
     qos_profile2.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
+    if (!use_lidar_fitting) {
+      marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
+        "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
+    } else if (use_lidar_fitting) {
+      circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
+        "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
+    }
     // marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
     //   "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
+
     circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
       "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
   }
@@ -118,6 +133,7 @@ private:
   double input_noise = 0.0;
   double sensor_noise = 0.0;
   bool first = true;
+
   sensor_msgs::msg::JointState old_js, js_pos;
   turtlelib::Transform2D tr;
   std::unique_ptr<turtlelib::DiffDrive> diff;
@@ -134,15 +150,16 @@ private:
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr green_path_pub;
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_subscriber;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-  // rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr marker_subscriber;
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr marker_subscriber;
   rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr circle_fit_subscriber;
   double del_x, del_y, del_theta;
   double x_odom, y_odom, theta_odom;
   turtlelib::Transform2D Tmo{};
   turtlelib::Transform2D Tob;
   turtlelib::Transform2D Tmb;
-  int max_obs = 10;
-  arma::Col<double> state_current{3 + 2 * static_cast<long long unsigned int>(max_obs), arma::fill::zeros};
+  int max_obs = 5;
+  arma::Col<double> state_current{3 + 2 * static_cast<long long unsigned int>(max_obs),
+    arma::fill::zeros};
   arma::Col<double> g_old{3 + 2 * static_cast<long long unsigned int>(max_obs), arma::fill::zeros}; // 3 + 2*max_obs
   std::vector<double> gg;
   arma::Mat<double> sigma_hat_minus;
@@ -159,13 +176,14 @@ private:
   visualization_msgs::msg::MarkerArray ob = visualization_msgs::msg::MarkerArray();
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_obs;
   arma::Mat<double> A;
-  arma::mat R = arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::eye) * 0.0001;
+  arma::mat R = arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::eye) * sensor_noise;
   std::vector<int> seen_ids{};
+
 
   /// \brief  Callback function for the marker array
   /// \param msg marker array message
-  // void marker_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
-  // {
+  void marker_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
+  {
     // Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
     // Tmb = Tmo * Tob;
     // state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
@@ -250,12 +268,13 @@ private:
     // g_old = state_current;
     // publish_obs();
     // ob.markers.clear();
-  // }
+  }
 
   /// \brief  Callback function for the odometry
   /// \param msg odometry message
   void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
   {
+    // RCLCPP_INFO_STREAM(get_logger(), "in odom callback");
     del_x = msg->twist.twist.linear.x;
     del_y = msg->twist.twist.linear.y;
     del_theta = msg->twist.twist.angular.z;
@@ -272,6 +291,7 @@ private:
     Tbb_prime = Tbb_subprime;
     t.header.frame_id = odom_id;
     t.child_frame_id = body_id;
+    // RCLCPP_INFO_STREAM(get_logger(), "body_id"<< body_id);
     t.header.stamp = this->get_clock()->now();
     t.transform.translation.x = x_odom;
     t.transform.translation.y = y_odom;
@@ -287,31 +307,33 @@ private:
   }
 
 
-  void fit_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg){
-  //use maha distance to fit the circle
-  Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
-  Tmb = Tmo * Tob;
-  state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
-  state_current.at(1) = Tmb.translation().x;
-  state_current.at(2) = Tmb.translation().y;
-  
-  RCLCPP_INFO_STREAM(get_logger(), "marks size"<< msg->markers.size());
-  for(size_t i = 0; i < msg->markers.size(); i++){
-    //convert x and y to range and bearing
-    // RCLCPP_INFO_STREAM(get_logger(), "getting here");
-    arma::mat z = arma::mat(2, 1, arma::fill::zeros);
-    auto x = msg->markers.at(i).pose.position.x;
-    auto y = msg->markers.at(i).pose.position.y;
-    auto r = std::sqrt(x*x + y*y);
-    auto theta = std::atan2(y,x);
-    z(0,0) = r;
-    z(1,0) = turtlelib::normalize_angle(theta);
-    double thresh_dist = 0.3;
-    auto thresh_id = seen_ids.size();
-    // RCLCPP_ERROR_STREAM(get_logger(), "seen_ids" << seen_ids.size());
-    A = var_mat();
+  void fit_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
+  {
+    // RCLCPP_INFO_STREAM(get_logger(), "in fit callback");
+    //use maha distance to fit the circle
+    Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
+    Tmb = Tmo * Tob;
+    state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
+    state_current.at(1) = Tmb.translation().x;
+    state_current.at(2) = Tmb.translation().y;
 
-    std::normal_distribution<> d1(0.0, input_noise);
+    // RCLCPP_INFO_STREAM(get_logger(), "marks size"<< msg->markers.size());
+    for (size_t i = 0; i < msg->markers.size(); i++) {
+      //convert x and y to range and bearing
+      // RCLCPP_INFO_STREAM(get_logger(), "getting here");
+      arma::mat z = arma::mat(2, 1, arma::fill::zeros);
+      auto x = msg->markers.at(i).pose.position.x;
+      auto y = msg->markers.at(i).pose.position.y;
+      auto r = std::sqrt(x * x + y * y);
+      auto theta = std::atan2(y, x);
+      z(0, 0) = r;
+      z(1, 0) = turtlelib::normalize_angle(theta);
+      double thresh_dist = 0.5;
+      auto thresh_id = seen_ids.size();
+      // RCLCPP_ERROR_STREAM(get_logger(), "seen_ids" << seen_ids.size());
+      A = var_mat();
+
+      std::normal_distribution<> d1(0.0, input_noise);
       auto Q =
         arma::Mat<double>(
         arma::join_cols(
@@ -323,102 +345,118 @@ private:
             arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros),
             arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::zeros))));
 
-    if (first) {
-      sigma_hat_minus = A * sigma_zero * A.t() + Q;
-      first = false;
-    } else {
-      sigma_hat_minus = A * sigma_hat_minus * A.t() + Q;
-    }
-    for (size_t j = 0; j < seen_ids.size(); j++){
-      auto dx_hat = state_current(3 + 2 * seen_ids[j]) - state_current(1);
-      auto dy_hat = state_current(3 + 2 * seen_ids[j] + 1) - state_current(2);
-      auto q = std::pow(dx_hat, 2) + std::pow(dy_hat, 2);
+      if (first) {
+        sigma_hat_minus = A * sigma_zero * A.t() + Q;
+        first = false;
+      } else {
+        sigma_hat_minus = A * sigma_hat_minus * A.t() + Q;
+      }
+      if (distance(x, y, state_current(1), state_current(2)) < 1.5) {
+        // RCLCPP_INFO_STREAM(get_logger(), "getting here");
+        for (size_t j = 0; j < seen_ids.size(); j++) {
+          auto dx_hat = state_current(3 + 2 * seen_ids[j]) - state_current(1);
+          auto dy_hat = state_current(3 + 2 * seen_ids[j] + 1) - state_current(2);
+          auto q = std::pow(dx_hat, 2) + std::pow(dy_hat, 2);
 
-      arma::vec z_hat =
-      arma::vec(
-      {std::sqrt(q),
-        turtlelib::normalize_angle(std::atan2(dy_hat, dx_hat) - state_current.at(0))});
+          arma::vec z_hat =
+            arma::vec(
+            {std::sqrt(q),
+              turtlelib::normalize_angle(std::atan2(dy_hat, dx_hat) - state_current.at(0))});
 
-      arma::Mat<double> H_i = arma::Mat<double>(2, 3 + 2 * max_obs, arma::fill::zeros);
-      H_i.at(0, 0) = 0.0;
-      H_i.at(0, 1) = -dx_hat / std::sqrt(q);
-      H_i.at(0, 2) = -dy_hat / std::sqrt(q);
-      H_i.at(1, 0) = -1.0;
-      H_i.at(1, 1) = dy_hat / q;
-      H_i.at(1, 2) = -dx_hat / q;
-      H_i.at(1, 3 + 2 * j) = -dy_hat / q;
-      H_i.at(1, 3 + 2 * j + 1) = dx_hat / q;
-      H_i.at(0, 3 + 2 * j) = dx_hat / std::sqrt(q);
-      H_i.at(0, 3 + 2 * j + 1) = dy_hat / std::sqrt(q);
-      // RCLCPP_INFO_STREAM(get_logger(), "A" << A);
-      // RCLCPP_INFO_STREAM(get_logger(), "sigma" << sigma_zero );
-      // RCLCPP_INFO_STREAM(get_logger(), "sigma hat minus" << sigma_hat_minus);
-      
+          arma::Mat<double> H_i = arma::Mat<double>(2, 3 + 2 * max_obs, arma::fill::zeros);
+          H_i.at(0, 0) = 0.0;
+          H_i.at(0, 1) = -dx_hat / std::sqrt(q);
+          H_i.at(0, 2) = -dy_hat / std::sqrt(q);
+          H_i.at(1, 0) = -1.0;
+          H_i.at(1, 1) = dy_hat / q;
+          H_i.at(1, 2) = -dx_hat / q;
+          H_i.at(1, 3 + 2 * j) = -dy_hat / q;
+          H_i.at(1, 3 + 2 * j + 1) = dx_hat / q;
+          H_i.at(0, 3 + 2 * j) = dx_hat / std::sqrt(q);
+          H_i.at(0, 3 + 2 * j + 1) = dy_hat / std::sqrt(q);
+          // RCLCPP_INFO_STREAM(get_logger(), "A" << A);
+          // RCLCPP_INFO_STREAM(get_logger(), "sigma" << sigma_zero );
+          // RCLCPP_INFO_STREAM(get_logger(), "sigma hat minus" << sigma_hat_minus);
 
-      arma::Mat<double> Ri = R.submat(2 * j, 2 * j, 2 * j + 1, 2 * j + 1);
-      arma::Mat<double> psi = H_i * sigma_hat_minus * H_i.t() + Ri;
-      arma::vec zj_new{2, arma::fill::zeros};
-      zj_new.at(0) = z(0) - z_hat.at(0);
-      zj_new.at(1) = turtlelib::normalize_angle(z(1) - z_hat(1));
-      arma::mat mahadist = zj_new.t() * psi.i() * zj_new;
-      if (mahadist.at(0) < thresh_dist){
-        thresh_dist = mahadist.at(0);
-        thresh_id = seen_ids[j];
-      } 
-    }
 
-    RCLCPP_INFO_STREAM(get_logger(), "thresh_id" << seen_ids.size());
-    if(thresh_id == seen_ids.size() && seen_ids.size() < max_obs){
-      RCLCPP_INFO_STREAM(get_logger(), "getting here IF");
-      seen_ids.push_back(thresh_id);
-      state_current(3 + 2 * thresh_id) = state_current(1) + z(0) * std::cos(turtlelib::normalize_angle(state_current(0) + z(1)));
-      state_current(3 + 2 * thresh_id + 1) = state_current(2) + z(0) * std::sin(turtlelib::normalize_angle(state_current(0) + z(1)));
-      calculate_measurement(x, y, thresh_id);
+          arma::Mat<double> Ri = R.submat(2 * j, 2 * j, 2 * j + 1, 2 * j + 1);
+          arma::Mat<double> psi = H_i * sigma_hat_minus * H_i.t() + Ri;
+          arma::vec zj_new{2, arma::fill::zeros};
+        }
+      }
+
+      //remove observations if they are very close to each other
+      for (size_t j = 0; j < seen_ids.size(); j++) {
+        if (distance(x, y, state_current(3 + 2 * seen_ids[j]), state_current(3 + 2 * seen_ids[j] + 1)) < 0.1) {
+          seen_ids.erase(seen_ids.begin() + j);
+        }
+      }
+      // RCLCPP_INFO_STREAM(get_logger(), "thresh_id" << seen_ids.size());
+      if (thresh_id == seen_ids.size() && seen_ids.size() < max_obs) {
+        // RCLCPP_INFO_STREAM(get_logger(), "getting here IF");
+        seen_ids.push_back(thresh_id);
+        state_current(3 + 2 * thresh_id) = state_current(1) + z(0) *
+          std::cos(turtlelib::normalize_angle(state_current(
+              0) + z(1)));
+        state_current(3 + 2 * thresh_id + 1) = state_current(2) + z(0) *
+          std::sin(turtlelib::normalize_angle(state_current(
+              0) + z(1)));
+        calculate_measurement(x, y, thresh_id);
+      }
+      if (thresh_id < max_obs) {
+        // RCLCPP_INFO_STREAM(get_logger(), "getting here ELSE");
+        calculate_measurement(x, y, thresh_id);
+      }
     }
-    if(thresh_id < max_obs){
-      RCLCPP_INFO_STREAM(get_logger(), "getting here ELSE");
-      calculate_measurement(x, y, thresh_id);
-    }
-  }
-  Tmb = turtlelib::Transform2D(
+    Tmb = turtlelib::Transform2D(
       turtlelib::Vector2D{state_current(1), state_current(
           2)}, turtlelib::normalize_angle(state_current(0)));
 
-  Tmo = Tmb * Tob.inv();
-  t1.header.frame_id = "map";
-  t1.child_frame_id = odom_id;
-  t1.header.stamp = this->get_clock()->now();
-  t1.transform.translation.x = Tmo.translation().x;
-  t1.transform.translation.y = Tmo.translation().y;
-  tf2::Quaternion q_mo;
-  q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmo.rotation()));
-  t1.transform.rotation.x = q_mo.x();
-  t1.transform.rotation.y = q_mo.y();
-  t1.transform.rotation.z = q_mo.z();
-  t1.transform.rotation.w = q_mo.w();
-  tf_broadcaster_->sendTransform(t1);
+    Tmo = Tmb * Tob.inv();
+    t1.header.frame_id = "map";
+    t1.child_frame_id = odom_id;
+    t1.header.stamp = this->get_clock()->now();
+    t1.transform.translation.x = Tmo.translation().x;
+    t1.transform.translation.y = Tmo.translation().y;
+    tf2::Quaternion q_mo;
+    q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmo.rotation()));
+    t1.transform.rotation.x = q_mo.x();
+    t1.transform.rotation.y = q_mo.y();
+    t1.transform.rotation.z = q_mo.z();
+    t1.transform.rotation.w = q_mo.w();
+    tf_broadcaster_->sendTransform(t1);
 
-  green_path.header.stamp = this->get_clock()->now();
-  green_path.header.frame_id = "map";
-  ps.header.frame_id = "map";
-  ps.pose.position.x = Tmb.translation().x;
-  ps.pose.position.y = Tmb.translation().y;
-  tf2::Quaternion q_mb;
-  q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmb.rotation()));
-  ps.pose.orientation.x = q_mb.x();
-  ps.pose.orientation.y = q_mb.y();
-  ps.pose.orientation.z = q_mb.z();
-  ps.pose.orientation.w = q_mb.w();
+    green_path.header.stamp = this->get_clock()->now();
+    green_path.header.frame_id = "map";
+    ps.header.frame_id = "map";
+    ps.pose.position.x = Tmb.translation().x;
+    ps.pose.position.y = Tmb.translation().y;
+    tf2::Quaternion q_mb;
+    q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmb.rotation()));
+    ps.pose.orientation.x = q_mb.x();
+    ps.pose.orientation.y = q_mb.y();
+    ps.pose.orientation.z = q_mb.z();
+    ps.pose.orientation.w = q_mb.w();
 
-  green_path.poses.push_back(ps);
-  green_path_pub->publish(green_path);
-  g_old = state_current;
-  publish_obs();
-  ob.markers.clear();
-  RCLCPP_INFO_STREAM(get_logger(), "state" << state_current);
+    green_path.poses.push_back(ps);
+    green_path_pub->publish(green_path);
+    g_old = state_current;
+    publish_obs();
+    ob.markers.clear();
+    // RCLCPP_INFO_STREAM(get_logger(), "state" << state_current);
   }
 
 
+  /// \brief distance between two points
+  /// \param x1 the x position of the first point
+  /// \param y1 the y position of the first point
+  /// \param x2 the x position of the second point
+  /// \param y2 the y position of the second point
+  /// \return the distance between the two points
+  double distance(double x1, double y1, double x2, double y2)
+  {
+    return std::sqrt(std::pow((x2 - x1), 2) + std::pow((y2 - y1), 2));
+  }
 
   /// \brief  Getting the twist from the transform
   /// \param Tbb transform

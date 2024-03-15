@@ -43,12 +43,18 @@ namespace turtlelib{
     }
 
     TEST_CASE("forward ik motion testing", "[forward_ik]"){
-        auto dif = DiffDrive(1.3, 0.5);
-        auto wheel = dif.compute_ik(Twist2D{0.0, 0.2 , 0.0});
+        // auto dif = DiffDrive(1.3, 0.5);
+        // auto wheel = dif.compute_ik(Twist2D{0.0, 0.2 , 0.0});
+        // REQUIRE_THAT(wheel.left, 
+        //     Catch::Matchers::WithinAbs(0.4, 1e-5));
+        // REQUIRE_THAT(wheel.right, 
+        //     Catch::Matchers::WithinAbs(0.4, 1e-5));
+        auto dif = DiffDrive(0.8,1.0);
+        auto wheel = dif.compute_ik(Twist2D{0.0, 1.0 , 0.0});
         REQUIRE_THAT(wheel.left, 
-            Catch::Matchers::WithinAbs(0.4, 1e-5));
+            Catch::Matchers::WithinAbs(1.0, 1e-5));
         REQUIRE_THAT(wheel.right, 
-            Catch::Matchers::WithinAbs(0.4, 1e-5));
+            Catch::Matchers::WithinAbs(1.0, 1e-5));
     }
 
      TEST_CASE("forward fk motion testing", "[forward_fk]"){
@@ -103,7 +109,7 @@ namespace turtlelib{
         REQUIRE_THAT(dif.get_transformation().translation().x, 
             Catch::Matchers::WithinAbs(0.1273884946, 1e-5));
         REQUIRE_THAT(dif.get_transformation().translation().y, 
-            Catch::Matchers::WithinAbs(0.1272870921, 1e-5)); 
+            Catch::Matchers::WithinAbs(0.1272870921, 1e-5));
     }
 
     TEST_CASE("rotation motion exception", "[exception]"){
