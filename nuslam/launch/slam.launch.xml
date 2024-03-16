@@ -18,7 +18,7 @@
     <arg name="cmd_src" value="$(var cmd_src)"/>
     <arg name="robot" value="$(var robot)"/>
     <arg name="use_rviz" value="$(var use_rviz)"/>
-    <arg name="rviz_config" value="$(find-pkg-share nuturtle_control)/config/control_blue_red_green.rviz"/>
+    <arg name="rviz_config" value="$(find-pkg-share nuturtle_control)/config/control_blue.rviz"/>
 </include>
 
 <include file = "$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"

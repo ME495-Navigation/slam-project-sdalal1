@@ -10,10 +10,15 @@
 ///     wheel_right (string): right wheel link name
 ///     input_noise (double): noise in the input
 ///     sensor_noise (double): noise in the sensor
+///     use_lidar_fitting (bool): use lidar fitting or not
+///     real_robot (bool): use real robot or not
 /// PUBLISHES:
 ///      /green/path (nav_msgs::msg::Path): contains the path of the green robot
+///      /prediction (visualization_msgs::msg::MarkerArray): contains the prediction data
 /// SUBSCRIBES:
 ///      /blue/odom (nav_msgs::msg::Odometry): contains the odometry of the blue robot
+///      /odom (nav_msgs::msg::Odometry): contains the odometry of the green robot for the real robot
+///      /fitting (visualization_msgs::msg::MarkerArray): contains the fitting data
 ///      /fake_sensor (visualization_msgs::msg::MarkerArray): contains the fake sensor data
 /// SERVICES:
 ///      initial_pose (nuturtle_control::srv::InitialPose): Sets the initial pose of green robot
@@ -59,9 +64,10 @@ public:
     declare_parameter("wheel_right", " ");
     // declare_parameter("input_noise", 1e-3);
     // declare_parameter("sensor_noise", 1e-1);
-    declare_parameter("input_noise", 1e-3);
+    declare_parameter("input_noise", 1e-2);
     declare_parameter("sensor_noise", 1e-1);
     declare_parameter("use_lidar_fitting", true);
+    declare_parameter("real_robot", false);
 
 
     wheel_radius_ = get_parameter("wheel_radius").as_double();
@@ -73,6 +79,7 @@ public:
     input_noise = get_parameter("input_noise").as_double();
     sensor_noise = get_parameter("sensor_noise").as_double();
     bool use_lidar_fitting = get_parameter("use_lidar_fitting").as_bool();
+    bool real_robot = get_parameter("real_robot").as_bool();
 
     if (body_id == " " || wheel_left == " " || wheel_right == " " || wheel_radius_ == 0.0 ||
       track_width_ == 0.0)
@@ -86,10 +93,15 @@ public:
       throw std::runtime_error("runtime_error_exception");
     }
     // odom_publisher = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    // if(!real_robot){
     // odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
     //   "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
+    // }else if(real_robot){
+    // odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
+    //   "odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
+    //  }
     odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
-      "odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
+      "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
     green_path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
 
 
@@ -108,18 +120,15 @@ public:
     qos_profile2.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
     qos_profile2.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-    if (!use_lidar_fitting) {
-      marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
-        "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
-    } else if (use_lidar_fitting) {
-      circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
-        "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
-    }
-    // marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
-    //   "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
-
+    // if (!use_lidar_fitting) {
+    //   marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
+    //     "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
+    // } else if (use_lidar_fitting) {
+    //   circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
+    //     "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
+    // }
     circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
-      "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
+        "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
   }
 
 private:
@@ -184,90 +193,86 @@ private:
   /// \param msg marker array message
   void marker_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
   {
-    // Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
-    // Tmb = Tmo * Tob;
-    // state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
-    // state_current.at(1) = Tmb.translation().x;
-    // state_current.at(2) = Tmb.translation().y;
-    // A = var_mat();
+    Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
+    Tmb = Tmo * Tob;
+    state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
+    state_current.at(1) = Tmb.translation().x;
+    state_current.at(2) = Tmb.translation().y;
+    A = var_mat();
 
-    // std::normal_distribution<> d1(0.0, input_noise);
+    std::normal_distribution<> d1(0.0, input_noise);
 
-    // // auto q_man = arma::Mat<double>(3, 3, arma::fill::zeros);
-    // // q_man(0, 0) = d1(get_random());
-    // // q_man(1, 1) = d1(get_random());
-    // // q_man(2, 2) = d1(get_random());
-    // auto Q =
-    //   arma::Mat<double>(
-    //   arma::join_cols(
-    //     arma::join_rows(
-    //       arma::Mat<double>(
-    //         3, 3,
-    //         arma::fill::eye) * input_noise, arma::Mat<double>(3, 2 * max_obs, arma::fill::zeros)),
-    //     arma::join_rows(
-    //       arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros),
-    //       arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::zeros))));
-    // if (first) {
-    //   sigma_hat_minus = A * sigma_zero * A.t() + Q;
-    //   first = false;
-    // } else {
-    //   sigma_hat_minus = A * sigma_hat_minus * A.t() + Q;
-    // }
+    auto Q =
+      arma::Mat<double>(
+      arma::join_cols(
+        arma::join_rows(
+          arma::Mat<double>(
+            3, 3,
+            arma::fill::eye) * input_noise, arma::Mat<double>(3, 2 * max_obs, arma::fill::zeros)),
+        arma::join_rows(
+          arma::Mat<double>(2 * max_obs, 3, arma::fill::zeros),
+          arma::Mat<double>(2 * max_obs, 2 * max_obs, arma::fill::zeros))));
+    if (first) {
+      sigma_hat_minus = A * sigma_zero * A.t() + Q;
+      first = false;
+    } else {
+      sigma_hat_minus = A * sigma_hat_minus * A.t() + Q;
+    }
 
-    // for (std::size_t i = 0; i < msg->markers.size(); i++) {
-    //   if (msg->markers.at(i).id == int(i) &&
-    //     !turtlelib::almost_equal(
-    //       msg->markers.at(i).pose.position.x, 0.0,
-    //       1e-4) && !turtlelib::almost_equal(msg->markers.at(i).pose.position.y, 0.0, 1e-4))
-    //   {
-    //     turtlelib::Vector2D cyl{msg->markers.at(i).pose.position.x,
-    //       msg->markers.at(i).pose.position.y};
-    //     auto vec_cyl = cyl;
-    //     auto mx = vec_cyl.x;
-    //     auto my = vec_cyl.y;
-    //     auto id = i;
+    for (std::size_t i = 0; i < msg->markers.size(); i++) {
+      if (msg->markers.at(i).id == int(i) &&
+        !turtlelib::almost_equal(
+          msg->markers.at(i).pose.position.x, 0.0,
+          1e-4) && !turtlelib::almost_equal(msg->markers.at(i).pose.position.y, 0.0, 1e-4))
+      {
+        turtlelib::Vector2D cyl{msg->markers.at(i).pose.position.x,
+          msg->markers.at(i).pose.position.y};
+        auto vec_cyl = cyl;
+        auto mx = vec_cyl.x;
+        auto my = vec_cyl.y;
+        auto id = i;
 
-    //     if (msg->markers.at(i).action != 2) {
-    //       calculate_measurement(mx, my, id);
-    //     }
-    //   }
-    // }
+        if (msg->markers.at(i).action != 2) {
+          calculate_measurement(mx, my, id);
+        }
+      }
+    }
 
-    // Tmb = turtlelib::Transform2D(
-    //   turtlelib::Vector2D{state_current(1), state_current(
-    //       2)}, turtlelib::normalize_angle(state_current(0)));
+    Tmb = turtlelib::Transform2D(
+      turtlelib::Vector2D{state_current(1), state_current(
+          2)}, turtlelib::normalize_angle(state_current(0)));
 
-    // Tmo = Tmb * Tob.inv();
-    // t1.header.frame_id = "map";
-    // t1.child_frame_id = odom_id;
-    // t1.header.stamp = this->get_clock()->now();
-    // t1.transform.translation.x = Tmo.translation().x;
-    // t1.transform.translation.y = Tmo.translation().y;
-    // tf2::Quaternion q_mo;
-    // q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmo.rotation()));
-    // t1.transform.rotation.x = q_mo.x();
-    // t1.transform.rotation.y = q_mo.y();
-    // t1.transform.rotation.z = q_mo.z();
-    // t1.transform.rotation.w = q_mo.w();
-    // tf_broadcaster_->sendTransform(t1);
+    Tmo = Tmb * Tob.inv();
+    t1.header.frame_id = "map";
+    t1.child_frame_id = odom_id;
+    t1.header.stamp = this->get_clock()->now();
+    t1.transform.translation.x = Tmo.translation().x;
+    t1.transform.translation.y = Tmo.translation().y;
+    tf2::Quaternion q_mo;
+    q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmo.rotation()));
+    t1.transform.rotation.x = q_mo.x();
+    t1.transform.rotation.y = q_mo.y();
+    t1.transform.rotation.z = q_mo.z();
+    t1.transform.rotation.w = q_mo.w();
+    tf_broadcaster_->sendTransform(t1);
 
-    // green_path.header.stamp = this->get_clock()->now();
-    // green_path.header.frame_id = "map";
-    // ps.header.frame_id = "map";
-    // ps.pose.position.x = Tmb.translation().x;
-    // ps.pose.position.y = Tmb.translation().y;
-    // tf2::Quaternion q_mb;
-    // q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmb.rotation()));
-    // ps.pose.orientation.x = q_mb.x();
-    // ps.pose.orientation.y = q_mb.y();
-    // ps.pose.orientation.z = q_mb.z();
-    // ps.pose.orientation.w = q_mb.w();
+    green_path.header.stamp = this->get_clock()->now();
+    green_path.header.frame_id = "map";
+    ps.header.frame_id = "map";
+    ps.pose.position.x = Tmb.translation().x;
+    ps.pose.position.y = Tmb.translation().y;
+    tf2::Quaternion q_mb;
+    q_mo.setRPY(0, 0, turtlelib::normalize_angle(Tmb.rotation()));
+    ps.pose.orientation.x = q_mb.x();
+    ps.pose.orientation.y = q_mb.y();
+    ps.pose.orientation.z = q_mb.z();
+    ps.pose.orientation.w = q_mb.w();
 
-    // green_path.poses.push_back(ps);
-    // green_path_pub->publish(green_path);
-    // g_old = state_current;
-    // publish_obs();
-    // ob.markers.clear();
+    green_path.poses.push_back(ps);
+    green_path_pub->publish(green_path);
+    g_old = state_current;
+    publish_obs();
+    ob.markers.clear();
   }
 
   /// \brief  Callback function for the odometry
@@ -306,7 +311,8 @@ private:
 
   }
 
-
+  /// \brief  Callback function for the fitting
+  /// \param msg marker array message
   void fit_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
   {
     // RCLCPP_INFO_STREAM(get_logger(), "in fit callback");
@@ -320,7 +326,6 @@ private:
     // RCLCPP_INFO_STREAM(get_logger(), "marks size"<< msg->markers.size());
     for (size_t i = 0; i < msg->markers.size(); i++) {
       //convert x and y to range and bearing
-      // RCLCPP_INFO_STREAM(get_logger(), "getting here");
       arma::mat z = arma::mat(2, 1, arma::fill::zeros);
       auto x = msg->markers.at(i).pose.position.x;
       auto y = msg->markers.at(i).pose.position.y;
@@ -328,9 +333,8 @@ private:
       auto theta = std::atan2(y, x);
       z(0, 0) = r;
       z(1, 0) = turtlelib::normalize_angle(theta);
-      double thresh_dist = 0.5;
+      double thresh_dist = 0.1;
       auto thresh_id = seen_ids.size();
-      // RCLCPP_ERROR_STREAM(get_logger(), "seen_ids" << seen_ids.size());
       A = var_mat();
 
       std::normal_distribution<> d1(0.0, input_noise);
@@ -374,26 +378,29 @@ private:
           H_i.at(1, 3 + 2 * j + 1) = dx_hat / q;
           H_i.at(0, 3 + 2 * j) = dx_hat / std::sqrt(q);
           H_i.at(0, 3 + 2 * j + 1) = dy_hat / std::sqrt(q);
-          // RCLCPP_INFO_STREAM(get_logger(), "A" << A);
-          // RCLCPP_INFO_STREAM(get_logger(), "sigma" << sigma_zero );
-          // RCLCPP_INFO_STREAM(get_logger(), "sigma hat minus" << sigma_hat_minus);
-
 
           arma::Mat<double> Ri = R.submat(2 * j, 2 * j, 2 * j + 1, 2 * j + 1);
           arma::Mat<double> psi = H_i * sigma_hat_minus * H_i.t() + Ri;
           arma::vec zj_new{2, arma::fill::zeros};
+
+
+          zj_new.at(0) = z(0) - z_hat.at(0);
+          zj_new.at(1) = turtlelib::normalize_angle(z(1) - z_hat(1));
+          arma::mat mahadist = zj_new.t() * psi.i() * zj_new;
+          if (mahadist.at(0) < thresh_dist){
+            thresh_dist = mahadist.at(0);
+            thresh_id = seen_ids[j];
+      } 
         }
       }
 
-      //remove observations if they are very close to each other
-      for (size_t j = 0; j < seen_ids.size(); j++) {
-        if (distance(x, y, state_current(3 + 2 * seen_ids[j]), state_current(3 + 2 * seen_ids[j] + 1)) < 0.1) {
-          seen_ids.erase(seen_ids.begin() + j);
-        }
-      }
-      // RCLCPP_INFO_STREAM(get_logger(), "thresh_id" << seen_ids.size());
+      // //remove observations if they are very close to each other
+      // for (size_t j = 0; j < seen_ids.size(); j++) {
+      //   if (distance(x, y, state_current(3 + 2 * seen_ids[j]), state_current(3 + 2 * seen_ids[j] + 1)) < 0.1) {
+      //     seen_ids.erase(seen_ids.begin() + j);
+      //   }
+      // }
       if (thresh_id == seen_ids.size() && seen_ids.size() < max_obs) {
-        // RCLCPP_INFO_STREAM(get_logger(), "getting here IF");
         seen_ids.push_back(thresh_id);
         state_current(3 + 2 * thresh_id) = state_current(1) + z(0) *
           std::cos(turtlelib::normalize_angle(state_current(
@@ -404,7 +411,6 @@ private:
         calculate_measurement(x, y, thresh_id);
       }
       if (thresh_id < max_obs) {
-        // RCLCPP_INFO_STREAM(get_logger(), "getting here ELSE");
         calculate_measurement(x, y, thresh_id);
       }
     }
@@ -443,7 +449,6 @@ private:
     g_old = state_current;
     publish_obs();
     ob.markers.clear();
-    // RCLCPP_INFO_STREAM(get_logger(), "state" << state_current);
   }
 
 
