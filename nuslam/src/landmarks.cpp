@@ -160,7 +160,7 @@ private:
     }
 
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Number of clusters: " << clusters.size());
+    // RCLCPP_INFO_STREAM(this->get_logger(), "Number of clusters: " << clusters.size());
     // for (const auto& cluster : clusters)
     for (size_t i = 0; i < clusters.size(); i++) {
       marker.header.frame_id = laser_id;
@@ -285,9 +285,10 @@ private:
     // if they are close, remove the smaller one
     for (size_t i = 0; i < fitting_array.markers.size(); i++) {
       for (size_t j = i + 1; j < fitting_array.markers.size(); j++) {
-        double dist = distance(fitting_array.markers.at(i).pose.position.x, fitting_array.markers.at(
-              i).pose.position.y, fitting_array.markers.at(j).pose.position.x,
-            fitting_array.markers.at(j).pose.position.y);
+        double dist = distance(
+          fitting_array.markers.at(i).pose.position.x, fitting_array.markers.at(
+            i).pose.position.y, fitting_array.markers.at(j).pose.position.x,
+          fitting_array.markers.at(j).pose.position.y);
         if (dist < 0.05) {
           if (fitting_array.markers.at(i).scale.x < fitting_array.markers.at(j).scale.x) {
             fitting_array.markers.erase(fitting_array.markers.begin() + i);
@@ -298,7 +299,7 @@ private:
       }
     }
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Number of fittings: " << fitting_array.markers.size());
+    // RCLCPP_INFO_STREAM(this->get_logger(), "Number of fittings: " << fitting_array.markers.size());
     publish_fittings->publish(fitting_array);
     fitting_array.markers.clear();
   }

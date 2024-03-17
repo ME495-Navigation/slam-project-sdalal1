@@ -63,7 +63,7 @@ public:
     declare_parameter("wheel_left", " ");
     declare_parameter("wheel_right", " ");
     // declare_parameter("input_noise", 1e-3);
-    // declare_parameter("sensor_noise", 1e-1);
+    // declare_parameter("sensor_noise", 1e-3);
     declare_parameter("input_noise", 1e-2);
     declare_parameter("sensor_noise", 1e-1);
     declare_parameter("use_lidar_fitting", true);
@@ -99,8 +99,6 @@ public:
       odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
         "odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
     }
-    // odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
-    //   "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
 
 
     green_path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);

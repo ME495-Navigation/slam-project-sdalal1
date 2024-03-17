@@ -1,6 +1,13 @@
 # NUSLAM
 Author: Shail Dalal
 
+## Quickstart
+1. Use `ros2 launch nuslam slam.launch.xml robot:=nusim cmd_src:=teleop` to start the simulation in RVIZ with a teleop twist keyboard
+2. Use `ros2 launch nuslam slam.launch.xml robot:=nusim cmd_src:=circle` to start the simulation in RVIZ with the circle node to make the robot move in a circle
+    - Use `ros2 service call /control nuturtle_control/srv/Control "{velocity: 0.1, radius: 0.1}` to start the circular motions of the robot in rviz
+3. Here is a picture of the turtlebot in the arena
+![Screenshot from 2024-03-01 00-37-51](https://github.com/ME495-Navigation/slam-project-sdalal1/assets/80363654/ec7e709b-89f2-41ef-a939-5c6b4de1b59a)
+
 ### Launch slam with known data association:
 `ros2 launch nuslam slam.launch.xml`
 
@@ -33,7 +40,6 @@ Steps:
 1. Connect to the Turtlebot
 2. Run the launch file on the turtlebot using `ros2 launch nuslam  turtbot_bringup.launch.xml`
 3. Run the launchfile on the laptop for visaulaization `ros2 launch nuslam pc_bringup.launch.xml`
-
 
 
 Below is the video of the turtlebot running in real life

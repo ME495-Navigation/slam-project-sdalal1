@@ -31,7 +31,8 @@ nuturtle_control geometry_msgs sensor_msgs nav_msgs nuturtlebot_msgs tf2 tf2_ros
 target_link_libraries(slam turtlelib::turtlelib "${cpp_typesupport_target}" ${ARMADILLO_LIBRARIES})
 
 add_executable(landmarks src/landmarks.cpp)
-ament_target_dependencies(landmarks turtlelib rclcpp std_srvs nav_msgs geometry_msgs sensor_msgs visualization_msgs tf2 tf2_ros nuturtlebot_msgs nuturtle_control)  
+ament_target_dependencies(landmarks turtlelib rclcpp std_srvs nav_msgs geometry_msgs
+sensor_msgs visualization_msgs tf2 tf2_ros nuturtlebot_msgs nuturtle_control)
 target_link_libraries(landmarks turtlelib::turtlelib "${cpp_typesupport_target}" ${ARMADILLO_LIBRARIES})
 
 install(TARGETS
@@ -48,7 +49,7 @@ find_package(Doxygen)
 
 # Building documentation should be optional.
 # To build documentation pass -DBUILD_DOCS=ON when generating the build system
-option(BUILD_DOCS "Build the documentation" ON)
+option(BUILD_DOCS "Build the documentation" OFF)
 
 # build just because Doxygen is missing
 if(${DOXYGEN_FOUND} AND ${BUILD_DOCS})
