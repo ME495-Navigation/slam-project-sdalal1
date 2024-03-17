@@ -92,18 +92,18 @@ public:
       RCLCPP_ERROR_STREAM(this->get_logger(), "track_width: " << track_width_);
       throw std::runtime_error("runtime_error_exception");
     }
-    // odom_publisher = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
-    // if(!real_robot){
+    if (!real_robot) {
+      odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
+        "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
+    } else if (real_robot) {
+      odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
+        "odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
+    }
     // odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
     //   "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
-    // }else if(real_robot){
-    // odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
-    //   "odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
-    //  }
-    odom_subscriber = create_subscription<nav_msgs::msg::Odometry>(
-      "blue/odom", 10, std::bind(&Slam::odom_callback, this, std::placeholders::_1));
-    green_path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
 
+
+    green_path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
 
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
@@ -120,15 +120,14 @@ public:
     qos_profile2.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
     qos_profile2.durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-    // if (!use_lidar_fitting) {
-    //   marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
-    //     "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
-    // } else if (use_lidar_fitting) {
-    //   circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
-    //     "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
-    // }
-    circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
+    if (!use_lidar_fitting) {
+      marker_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
+        "fake_sensor", 10, std::bind(&Slam::marker_callback, this, std::placeholders::_1));
+    } else if (use_lidar_fitting) {
+      circle_fit_subscriber = create_subscription<visualization_msgs::msg::MarkerArray>(
         "/fitting", qos_profile2, std::bind(&Slam::fit_callback, this, std::placeholders::_1));
+    }
+
   }
 
 private:
@@ -387,10 +386,10 @@ private:
           zj_new.at(0) = z(0) - z_hat.at(0);
           zj_new.at(1) = turtlelib::normalize_angle(z(1) - z_hat(1));
           arma::mat mahadist = zj_new.t() * psi.i() * zj_new;
-          if (mahadist.at(0) < thresh_dist){
+          if (mahadist.at(0) < thresh_dist) {
             thresh_dist = mahadist.at(0);
             thresh_id = seen_ids[j];
-      } 
+          }
         }
       }
 
@@ -403,10 +402,14 @@ private:
       if (thresh_id == seen_ids.size() && seen_ids.size() < max_obs) {
         seen_ids.push_back(thresh_id);
         state_current(3 + 2 * thresh_id) = state_current(1) + z(0) *
-          std::cos(turtlelib::normalize_angle(state_current(
+          std::cos(
+          turtlelib::normalize_angle(
+            state_current(
               0) + z(1)));
         state_current(3 + 2 * thresh_id + 1) = state_current(2) + z(0) *
-          std::sin(turtlelib::normalize_angle(state_current(
+          std::sin(
+          turtlelib::normalize_angle(
+            state_current(
               0) + z(1)));
         calculate_measurement(x, y, thresh_id);
       }

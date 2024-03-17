@@ -199,7 +199,7 @@ private:
       ps.pose.orientation.w = q_red.w();
 
       blue_path.poses.push_back(ps);
-      if(blue_path.poses.size() > 7000){
+      if (blue_path.poses.size() > 7000) {
         blue_path.poses.erase(blue_path.poses.begin());
       }
       blue_path_pub->publish(blue_path);

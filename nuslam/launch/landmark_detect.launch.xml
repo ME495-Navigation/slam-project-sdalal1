@@ -22,9 +22,9 @@
   </include>
 
   <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'nusim\'')"/>
-  <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'none\'')">
-    <param name="laser_id" value="green/base_scan"/>
-  </node>
+  <!-- <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'none\'')">
+    <param name="laser_id" value="red/base_scan"/>
+  </node> -->
 
 
 </launch>

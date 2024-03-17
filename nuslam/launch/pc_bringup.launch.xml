@@ -9,13 +9,14 @@
 </include>
 
 <node pkg="nuslam" exec="landmarks"> 
-    <param name="laser_id" value="green/base_scan"/>
+    <param name="laser_id" value="red/base_scan"/>
 </node>
 
 <include file = "$(find-pkg-share nuslam)/launch/slam.launch.xml">
 <arg name="cmd_src" value="none"/>
 <arg name="robot" value="none"/>
 <arg name="use_rviz" value="false"/>
+<arg name="real_robot" value="true"/>
 </include>
 
 <node pkg="nusim" exec="nusim" output="screen">

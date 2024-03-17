@@ -270,7 +270,7 @@ private:
   /// \brief Creates the walls and publish it
   void publish_walls()
   {
-    
+
     w1.header.frame_id = "nusim/world";
     w1.id = 1;
     w1.type = visualization_msgs::msg::Marker::CUBE;
@@ -286,7 +286,7 @@ private:
     w1.color.b = 0.0;
     w1.color.a = 1.0;
 
-    
+
     w2.header.frame_id = "nusim/world";
     w2.id = 2;
     w2.type = visualization_msgs::msg::Marker::CUBE;
@@ -302,7 +302,7 @@ private:
     w2.color.b = 0.0;
     w2.color.a = 1.0;
 
-    
+
     w3.header.frame_id = "nusim/world";
     w3.id = 3;
     w3.type = visualization_msgs::msg::Marker::CUBE;
@@ -454,8 +454,8 @@ private:
 
       laser.ranges.push_back(dist + laser_noise);
     }
-    if(!draw_only){
-    laser_pub->publish(laser);
+    if (!draw_only) {
+      laser_pub->publish(laser);
     }
   }
 
@@ -485,8 +485,8 @@ private:
   /// @brief fake obstacle publisher
   void fake_timer_callback()
   {
-    if(!draw_only){
-    publish_laser();
+    if (!draw_only) {
+      publish_laser();
     }
     fake_cyl.header.frame_id = "red/base_footprint";
     fake_cyl.type = visualization_msgs::msg::Marker::CYLINDER;
@@ -521,9 +521,9 @@ private:
       }
       fake_obs.markers.push_back(fake_cyl);
     }
-    if(!draw_only){
-    publish_fake_obs->publish(fake_obs);
-    fake_obs.markers.clear();
+    if (!draw_only) {
+      publish_fake_obs->publish(fake_obs);
+      fake_obs.markers.clear();
     }
   }
 
@@ -535,8 +535,8 @@ private:
     auto time_msg = std_msgs::msg::UInt64();
     count_++;
     time_msg.data = count_;
-    if(!draw_only){
-    publisher_timestep->publish(time_msg);
+    if (!draw_only) {
+      publisher_timestep->publish(time_msg);
     }
     red_sensor.stamp = this->get_clock()->now();
     red_path.header.stamp = this->get_clock()->now();
@@ -549,8 +549,8 @@ private:
     w3.header.stamp = this->get_clock()->now();
     w4.header.stamp = this->get_clock()->now();
 
-    if(!draw_only){
-    sensor_pub->publish(red_sensor);
+    if (!draw_only) {
+      sensor_pub->publish(red_sensor);
     }
     fake_cyl.header.stamp = this->get_clock()->now();
 
@@ -598,16 +598,18 @@ private:
       right_wheel_velocity += noise;
     }
     diff->compute_fk(
-      left_wheel_velocity * (motor_cmd_per_rad_sec_/rate),
-      right_wheel_velocity * (motor_cmd_per_rad_sec_/rate));
+      left_wheel_velocity * (motor_cmd_per_rad_sec_ / rate),
+      right_wheel_velocity * (motor_cmd_per_rad_sec_ / rate));
 
     RCLCPP_INFO_STREAM(
       get_logger(),
-      "wheel_twist"<< diff->get_twist());
+      "wheel_twist" << diff->get_twist());
 
-    left_wheel += (left_wheel_velocity)* motor_cmd_per_rad_sec_ *slipping_noise  * 652.229299363/rate;
+    left_wheel += (left_wheel_velocity) * motor_cmd_per_rad_sec_ * slipping_noise * 652.229299363 /
+      rate;
 
-    right_wheel += (right_wheel_velocity)* motor_cmd_per_rad_sec_ *slipping_noise  * 652.229299363/rate;
+    right_wheel += (right_wheel_velocity) * motor_cmd_per_rad_sec_ * slipping_noise *
+      652.229299363 / rate;
 
     red_sensor.left_encoder = left_wheel;
     red_sensor.right_encoder = right_wheel;
@@ -632,11 +634,11 @@ private:
     ps.pose.orientation.w = q_red.w();
     red_path.poses.push_back(ps);
 
-    if(red_path.poses.size() >= 7000){
+    if (red_path.poses.size() >= 7000) {
       red_path.poses.erase(red_path.poses.begin());
     }
-    if(!draw_only){
-    red_path_pub->publish(red_path);
+    if (!draw_only) {
+      red_path_pub->publish(red_path);
     }
   }
 
