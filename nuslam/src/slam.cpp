@@ -62,10 +62,10 @@ public:
     declare_parameter("odom_id", "odom");
     declare_parameter("wheel_left", " ");
     declare_parameter("wheel_right", " ");
-    // declare_parameter("input_noise", 1e-3);
-    // declare_parameter("sensor_noise", 1e-3);
-    declare_parameter("input_noise", 1e-2);
-    declare_parameter("sensor_noise", 1e-1);
+    declare_parameter("input_noise", 1e-5);
+    declare_parameter("sensor_noise", 1e-5);
+    // declare_parameter("input_noise", 1e-2);
+    // declare_parameter("sensor_noise", 1e-1);
     declare_parameter("use_lidar_fitting", true);
     declare_parameter("real_robot", false);
 
@@ -190,6 +190,7 @@ private:
   /// \param msg marker array message
   void marker_callback(const visualization_msgs::msg::MarkerArray::SharedPtr msg)
   {
+        RCLCPP_INFO_STREAM(get_logger(), "in marker callback");
     Tob = turtlelib::Transform2D(turtlelib::Vector2D{x_odom, y_odom}, theta_odom);
     Tmb = Tmo * Tob;
     state_current.at(0) = turtlelib::normalize_angle(Tmb.rotation());
@@ -397,7 +398,7 @@ private:
       //     seen_ids.erase(seen_ids.begin() + j);
       //   }
       // }
-      if (thresh_id == seen_ids.size() && seen_ids.size() < max_obs) {
+      if (thresh_id == seen_ids.size() && seen_ids.size() < static_cast<long long unsigned int>(max_obs)) {
         seen_ids.push_back(thresh_id);
         state_current(3 + 2 * thresh_id) = state_current(1) + z(0) *
           std::cos(
@@ -411,7 +412,7 @@ private:
               0) + z(1)));
         calculate_measurement(x, y, thresh_id);
       }
-      if (thresh_id < max_obs) {
+      if (thresh_id < static_cast<long long unsigned int>(max_obs)) {
         calculate_measurement(x, y, thresh_id);
       }
     }
