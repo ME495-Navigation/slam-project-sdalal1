@@ -601,10 +601,6 @@ private:
       left_wheel_velocity * (motor_cmd_per_rad_sec_ / rate),
       right_wheel_velocity * (motor_cmd_per_rad_sec_ / rate));
 
-    RCLCPP_INFO_STREAM(
-      get_logger(),
-      "wheel_twist" << diff->get_twist());
-
     left_wheel += (left_wheel_velocity) * motor_cmd_per_rad_sec_ * slipping_noise * 652.229299363 /
       rate;
 
